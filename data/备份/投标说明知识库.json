@@ -1,0 +1,933 @@
+{
+  "0": [
+    {
+      "请在提交文件之前评审偏差。使用线上工具，删除不适用于供应范围、操作条 件及材料的所有条款。Please review comments prior to submission. Using the online tool, remove any that are not applicable to your scope of supply, operating conditions or material offered. API 条款带*表示符号注释，章节前的圆点表示该条款需要由买方做出决定或 需要买方提供详细资料。请仔细核查客户的要求，并再次删除任何不适用于您 标书的圆点偏差。API clauses with * indicate bulleted comment, a bullet at the beginning of a clause or subclause indicates that either a decision is required or the purchaser is required to provide further information. Please carefully review customer requirements and again remove any bulleted comments which are not applicable to your specific tender.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "当API 610 (ISO 13709)与询价/订单发生冲突时，始终以采购订单为准。The Purchase Order is always the governing document in the event of a conflict between API 610 (ISO 13709) and the inquiry / order.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "1": [
+    {
+      "当出口压力< 19 bar、入口压力< 5 bar、泵送温度< 150°C、转速< 3600、额 定扬程< 120m和叶轮外径< 330 mm时，销售可提供替代的、不符合API标 准的选型，例如 ESA 泵。Sales could offer alternative, non-compliant selections such as ESA pumps, when the discharge pressure is < 19 bar, and suction pressure < 5 bar, and pumping temperature < 150°C, and rpm < 3600, and rated head <120m, and overhung impeller dia < 330 mm.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "3.2": [
+    {
+      "注意，允许工作区是由深蓝决定的。深蓝通常使用从最小连续稳定流量(MCSF) 到120%最佳效率点流量的区域作为“允许工作区”。 Note that the allowable operating region is determined by Deepblue. Deepblue typically uses the flow region from minimum-continuous stable flow (MCSF) to 120 percent best efficiency flow as the \"allowable operating region\". 注意，产品手册中性能曲线上的MCSF限制是NPSH曲线上定义的最低流量。 如果要求更低的最小流量，请咨询深蓝产品工程师。变速泵通常还会定义一个 最大和最小转速。如果需要的流量或转速超过已公布的标准，请咨询深蓝工程 师。Note that the limit for MCSF on each Product Manual performance curve is the lowest flow defined on the NPSH curve. Consult with Deepblue Engineering if lower minimum flow is required. On a variable-speed pump there will typically be a maximum and minimum speed also defined. Consult with Deepblue Engineering if flowrates or pump speeds outside of published standard are required.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "3.13": [
+    {
+      "必须明确的是，当段落中使用“驱动部件”一词，例如7.3.6（设备垫片），这 不适用于泵。It is important to know that when the term \"drive-train component\" is used in paragraphs such as 7.3.6 (Equipment shims); this does not apply to the pump.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "3.19": [
+    {
+      "警告:在变速应用中，当转速超过ePM规定的额定转速时，需校核最大允许工 作压力 MAWP 和轴功率(kW)/100 rpm 。Warning: On Variable speed applications, check MAWP and shaft hp (kW)/100 rpm at speeds above ePM rated speed.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "最大连续转速可被视为比曲线所示的设计转速大5%。（参见章节6.1.5）。必须 注意确保轴功率、轴向力、壳体温度—压力曲线的限制并保证机械密封在可接 受范围内。Maximum continuous speed can be considered as 5% greater than the design speed shown in curve index. [see para 6.1.5]. Care must be taken to ensure that shaft power limits, thrust, casing pressure-temperature limits and mechanical seal are acceptable.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "3.21": [
+    {
+      "利用 MAWP 的定义来避免混淆。泵壳 MAWP 必须大于最大出口压力（见第 3.22段）与6.3.5段定义的压力余量之和。Utilize this definition of MAWP to avoid confusion. The pump casing MAWP must be greater than the maximum discharge pressure (see paragraph 3.22) plus pressure margin defined in paragraph 6.3.5.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "3.22": [
+    {
+      "请注意，如果客户附加了第6.3.2段中的其他标准，则可以更改最大出口压力 的定义。Note that this definition of maximum discharge pressure can be altered if the customer imposes additional criteria in paragraphs 6.3.2": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "3.23": [
+    {
+      "这是一个工艺条件，由买方指定。动态和静态密封压力对机械密封的选择都 很重要，必须由深蓝在给密封供应商的数据单和采购订单中确认，见 6.8.13。This is a process condition and is specified by the purchaser. Both dynamic and static sealing pressures are important to selection of the mechanical seal and must be confirmed by Deepblue in data sheets and in PO to Seal Vendor. See 6.8.13.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "3.25": [
+    {
+      "最大静态密封压力对于机械密封的选择非常重要，必须由深蓝在提供给密封供 应商数据单和采购订单中确认，见6.8.13。不要将此与最大动态密封压力混淆。 请注意，如果买方决定将泵的吸入区和压出区设计成相同的MAWP形式，则 该值将等于泵的 MAWP（见第 6.3.6 段）。The maximum static sealing pressures is important to selection of the mechanical seal and must be confirmed by Deepblue in data sheets and in PO to Seal Vendor. See 6.8.13. Do not confuse this with maximum dynamic sealing pressure. Be aware that this value will be equal to the pump's MAWP if the purchaser makes a decision to rate the suction regions and the discharge regions to the same MAWP (see paragraph 6.3.6).": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "3.27": [
+    {
+      "随着变速传动系统VSD使用的普及，投标中明确最低运行转速是非常重要的。 泵特性值参照ePM或咨询工程师。With the increasing use of variable speed drive systems it is important to clarify the minimum operating speed in the tender. Refer to ePM or Engineering for pump-specific value.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "3.30": [
+    {
+      "最小设计金属温度见6.12.4.1。MDMT - See 6.12.4.1 below": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "3.38": [
+    {
+      "注意“观察试验”和“见证试验”的区别。Note the difference between an \"observed\" and \"witnessed\" test.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "3.42": [
+    {
+      "在大多数情况下，深蓝将 BEP 流量的 70%到 120%作为“优先工作区”。 Deepblue uses the flow region from 70 to 120 percent of BEP flow as the \"preferred operating range.\"": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "3.43": [
+    {
+      "参阅段6.3.5。 Refer to para 6.3.5.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "5.1": [
+    {
+      "位于北美的深蓝公司将提供符合US标准的泵。位于北美以外的公司将提供符 合ISO标准的泵。Deepblue operations based in North America will furnish pumps in compliance with U.S. standards. Deepblue operations based outside of North America will furnish pumps in compliance with ISO standards.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "5.2": [
+    {
+      "任何法规要求必须在报价阶段阐明，并在采购订单中确认。 Any Statutory requirements must be defined during tendering phase and be confirmed in the Purchase Order.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.1.1": [
+    {
+      "虽然泵可以连续运行 3 年，但实际泵寿命受工况变量的影响。有关深蓝的义 务，请参阅销售条款的质量保证部分。While the pump may be designed for 3 years continuous running, actual pump life is influenced by operating condition variables. See warranty section of terms and conditions of sale for Deepblue's obligations.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.1.4": [
+    {
+      "选择的叶轮要有5%的扬程上升量（最大直径的97.5%）。一些客户要求10% 扬程上升量（最大直径的95%）。Select impeller to allow for 5% head increase (97.5% of max diameter). Some customers require 10% head increase (95% of max diameter).": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.1.5": [
+    {
+      "所有的变速泵，泵壳和泵轴必须设计成当转速超出5%时，能够承受10%的额 外扬程和15%的额外功率。All variable speed pumps the pump casing and shaft must be designed to accommodate the 10% extra head and 15% extra power associated with this 5% over-speed.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "泵和驱动机可以达到 105%的转速。泵 ePM 中的最大转速只适用于泵。当转 速超过额定转速的105%时，要从驱动机供应商处获得书面协议。Pumps and drivers are capable of 105% speed. Pump ePM max speed pertains only to the pump. Obtain written agreement from drive train component suppliers for speeds in excess of 105% of rated speed.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.1.6": [
+    {
+      "汽轮机脱扣速度的偏差（通常为超速 10-15%）将由轴材料安全系数和 150% MAWP的静水压试验来调节。见6.3.2段支持这种方法的注释。Excursions to steam turbine trip speed (typically 10-15 % overspeed) will be accommodated by shaft material safety factor and hydrostatic testing at 150% MAWP. See note in paragraph 6.3.2 that supports this approach.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.1.7": [
+    {
+      "为避免将空气吸入泵内，当备用泵处于真空状态时，应与密封供应商协商密封 的选择。To avoid pulling air into pump, discuss seal selection with seal vendor if pump will be under vacuum when idle.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "密封腔压力最好远高于汽化压力，以减少在密封面上的闪蒸。当使用标准的喉 部衬套时，密封腔压力与入口压力相同。如果密封腔在泵送温度下，入口压力 没有比泵送汽化压力高约 30%；必须采取以下措施之一：Seal chamber pressure be well above vapor pressure to reduce flashing across the seal faces. The seal chamber pressure is the same as suction pressure when a standard pump throat bushing is used. If the suction pressure is not approximately 30% higher than the pumpage vapor pressure at the pumpage temperature in the seal chamber; one of the following must be done: 1. 在密封腔的底部安装一个浮动喉部衬套，以实现密封冲洗的限流和背压。 机械密封供应商必须提供这种衬套。Fit a floating throat bushing in the bottom of the seal chamber to cause seal flush flow restriction and backpressure. The mechanical seal vendor must provide this bushing. 2. 通过密封冷却方案（通常为21或23方案）或外部源冲洗（32方案）来降 低密封冲洗液的汽化压力。如果有疑问，请咨询工厂。Decrease the vapor pressure of the seal flush fluid by either cooling the product (typically a plan 21 or 23) or use another fluid (plan 32). If in doubt refer to factory.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.1.8": [
+    {
+      "当需要焦炭铰刀和/或苛刻的磨损性能时，联系售前工程师来获得性能曲线。 Refer to ADVE for performance curves when the coke crusher and/or severe abrasive service features are required.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "在计算 NPSH余量或确定支撑管长度时，请注意NPSH的基准面。Take note of the NPSH datum elevation when evaluating margins or column lengths.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.1.9": [
+    {
+      "客户可在数据单上指定泵的“汽蚀比转速”的限制。将产品手册曲线和/或文件 中未覆盖的任何此类限制提交给工厂。（定义及计算方法见附录 A）The customer may specify a limit of the pump suction specific speed on the data sheet. Refer any such limit not covered by Product Manual curve and/or documentation to factory. (See Annex A for definition & calculation method.) 基本设计汽蚀比转速限制：大多数性能曲线 NSS 小于等于 11,000 (USGPM, FT)。有许多具有较高NSS 限制的可选曲线-请参阅产品手册或咨询工厂。 Basic Design Suction Specific Speed Limitations: Most SP performance curves have an NSS of 11,000 (USGPM, FT) or less. There are a number of optional curves with higher Nss limits - see the product manual or refer to appropriate factory.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.1.10": [
+    {
+      "当介质粘度超过2cp时，检查其粘滞性能。当粘度超过1000cp时，咨询售前 工程师进行水力和机械性能评审。Check viscous performance whenever product viscosity exceeds 2 cP. Refer to ADVE if viscosity exceeds 1000 cP for hydraulic and mechanical review.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.1.11": [
+    {
+      "如果指定并联运行，请检查从额定流量点扬程到关死点（关阀）的扬程升量能 否达到至少为额定扬程的 10%。注意，如果泵的额定流量小于 BEP 流量的 80%，或者泵的设计比转速较低，则可能无法做到这一点。销售出口带孔板以 提升扬程升量的泵之前，请咨询工厂。Check that head rise satisfies the 10% minimum from rated flow to shut off (closed valve) if parallel operation is specified. Note that this may not be possible on pumps selected with rated flow less than 80% of BEP flow or on pump designs of low specific speed. Refer to factory before selling pumps with discharge orifice to create artificial rise to shutoff.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.1.12": [
+    {
+      "如果可能的话，选择的泵通常应在额定叶轮直径BEP点的80%到110%之间。 如果超出了这个范围，在报价时做出备注。If possible pump selections should normally be made between 80% and 110% of BEP capacity at rated impeller diameter. If outside of that window, make comment in tender.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.1.14": [
+    {
+      "如果客户要求噪声等级，使用 ePM 或深蓝噪声计算工具进行计算。对于 VS 泵，大部分噪音在安装板之下，联系工厂。If customer requests sound levels, use ePM or calculate using Deepblue noise calc tools. On VS pumps, majority of noise is under mounting plate - contact factory": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.1.15": [
+    {
+      "同时参考段 6.1.5 的偏差。泵的性能曲线可识别最大可用的叶轮直径。Refer also to comments made against 6.1.5. Pump performance curves will identify maximum usable Impeller diameter.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.1.17": [
+    {
+      "对于不同运行工况和环境条件，冷却要求请参阅产品手册。针对工况推荐的所 有冷却功能，请加价。See Product manual for cooling requirements under various operating and ambient conditions. Provide adders for all cooling features as recommended for the application.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.1.18": [
+    {
+      "该系列产品不提供冷却夹套，API 610中未作要求。我们不倾向提供。Cooling jackets are not available on this product line, they are not required by API 610. We prefer not to supply them.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.1.22": [
+    {
+      "将此要求发送给电机、密封、齿轮和 LOS 油站供应商，并要求提供符合性的 声明/合格证。Send this requirement to motor, seal, gear and LOS subvendor and request statement of compliance.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.1.23": [
+    {
+      "深蓝的标准配置中，采用深蓝自主设计生产的机械油封，如果用户要求其他品 牌机械油封（如INPRO），则在报价中需要增加额外的成本。 In the standard configuration of Deep Blue, the mechanical oil seal independently designed and produced by Deep Blue is used. If the user requires other brands of mechanical oil seals (such as INPRO), additional costs need to be added in the quotation.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.1.28": [
+    {
+      "任何特殊材料和为非常低或高环境温度指定的附件，需加价。Add for any special materials and accessories specified for very low or high ambient temperatures.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.3": [
+    {
+      "设计使用的最大出口压力必须始终考虑最大入口压力、关死点扬程，以及强制 要求的10%压差余量。（见6.3.5）The maximum discharge pressure used in design must always take into account the maximum suction pressure, the head rise back to shut off, and the mandatory 10% differential pressure margin. (See para. 6.3.5).": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.3.1": [
+    {
+      "注意最大出口压力是如何确定的。Note how maximum discharge pressure is determined.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.3.2": [
+    {
+      "注意最大出口压力是如何增加的。Note how the maximum discharge pressure might be increased.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.3.3": [
+    {
+      "当买方规定泵按照“两倍管口载荷” 设计时，深蓝不会将此标准应用于本段 要求。承压泵体的设计不能满足表 5 管口载荷的四倍要求。 When the purchaser specifies the pump be designed for \"two times nozzle loads,\" Deepblue will not apply this criteria to this paragraph requirement. The pressure casing will not be designed for four times Table 5 nozzle loads.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.3.4": [
+    {
+      "OH2、OH3 和 BB2 泵承压壳体是依据规定的拉伸应力和铸造系数设计的。 OH2, OH3, and BB2 pump pressure casings are designed in accordance with these specified tensile stresses and casting factors.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.3.5": [
+    {
+      "注意，泵的MAWP必须包括10%的压差余量。MAWP = (1.1 x关死点压力)+ 最大入口压力。Note that the pump MAWP must include 10 % additional differential pressure. MAWP = (1.1 x Shut-off differential pressure) + maximum suction pressure.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "NEW HD泵提供ANSI B16.5 Cl 300 RF（等同于ISO 7005-1 PN 50）法兰。 ANSI B16.5 Cl 600 RF (等同于ISO 7005-1 PN 100) 法兰在 NEW HD 上是 可选设计。温度-压力曲线由法兰、壳体设计压力和所选材料决定。参考产品手 册中公布的温度-压力曲线。NEW HD Pumps are supplied with ANSI B16.5 Cl 300 RF, (Equivalent to ISO 7005-1 PN 50) flanges. ANSI B16.5 Cl 600 RF, (Equivalent to ISO 7005-1 PN 100) flanges are optional on NEW HD . Pressure - temperature ratings are governed by the flanges, case design pressure, and materials selected. See Pressure vs. Temperature ratings published in product manuals 请注意，当壳体上连接奥氏体材质的法兰时，承压壳体的MAWP可能会因锻 造的AISI 316L法兰压力等级而进一步受到限制。这种情况也发生在C-6、A- 8和其他带有316L奥氏体不锈钢流程管路的泵上。可能需要在这种管路上使 用ANSI B16.5 CI 600法兰，以达到所需的承压壳体MAWP。需相应加价。 Note that when flanged case connections with austenitic material are attached to the case, the pressure casing MAWP may be further limited by the wrought AISI 316L flange pressure rating. This occurs on C-6, A-8 and other pumps with 316L austenitic stainless steel process piping. It may be necessary to use ANSI B16.5 CI 600 flanges on such piping systems to achieve the desired pressure casing MAWP. Price accordingly.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.3.6": [
+    {
+      "如果客户要求入口额定压力大于API 682要求的40 Bar，请联系售前工程师 并提醒密封供应商。If customer requires suction region to be rated at greater than the 40 Bar required by API 682, contact ADVE and alert seal vendor.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.3.11": [
+    {
+      "请结合第 9.2.1.2 段对两端轴承支撑泵的要求阅读本段内容。两端轴承支撑泵 工作温度小于150℃时可采用底脚安装。轴向剖分的两端轴承支撑多级泵应采 用近中心线安装。Read this general paragraph in conjunction with Para 9.2.1.2 requirements for between bearings pumps. Between bearings pumps may be foot mounted up to 150℃ service temperature. Axial split between bearings multistage pumps are mounted near centerline.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.4.2.5": [
+    {
+      "进出口法兰的背面应全部车平或局部锪平。通常，辅助工艺管路上的法兰采用 供应商标准供应。The back side of suction and discharge flanges will be full- faced or spot faced. Normally, auxiliary process piping flanges are furnished in vendor standard finish.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.4.3.1": [
+    {
+      "密封冲洗管路采用316不锈钢 TUBE管、承插焊或对焊时，需加价。当需要 排气阀或排液阀时，深蓝倾向于采用法兰连接，客户在现场配置这些阀门，以 便批量采购并规范管路的连贯性。除碳钢和316不锈钢外，所有阀门都需要关 注成本。Add for 316SS tubing, socket-welded or butt welded seal flush piping systems. When vent and or drain valves are requested, it is Deepblue's preference to terminate in a flange and customer to provide these valves on site, for ease of procurement and consistency to piping specification. Watch costing on all valves other than carbon steel or 316 SS construction.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "请注意，在默认情况下，API 610第11版标准要求泵的设计适用于易燃或危 险工况。因此，与承压壳体连接的辅助接口必须采用承插焊、对焊或整体法兰 连接，并以法兰接口终止。Note that by default the API 610 11th Edition standard now requires that pumps be configured for flammable or hazardous service. Auxiliary connections to the pressure casing must therefore be socket-welded, butt- welded, or integrally flanged and terminate in a flange.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.4.3.2": [
+    {
+      "如果买方指定，管道泵的最高工作温度小于等于55°C的，辅助连接接口可以 是螺纹连接。If specified by the purchaser, auxiliary connections may be threaded for pumps in pipeline service with a maximum operating temperature of 55°C or less.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.4.3.3": [
+    {
+      "注意，如有指定，密封冲洗管路从壳体到TUBE管可以使用特殊的螺纹配件过 渡。联系售前工程师确认。Note that if specified, special threaded fittings for transitioning from the casing to tubing for seal flush piping may be used. Contact ADVE.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.4.3.4": [
+    {
+      "这一段强调我们的观点，即焊接到泵体上的附件属于压力边界焊接，而不是管 路焊接，因此要求符合压力边界焊缝的无损检验要求，而不是对焊管路的 B31.3 无损检验要求。This paragraph reinforces our position that the attachment weld to the casing is a pressure boundary weld, not a piping weld and thus falls under the pressure boundary weld NDE requirements, not the B31.3 NDE for buttwelded piping.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.4.3.8": [
+    {
+      "深蓝不使用直管螺纹。Deepblue does not use cylindrical pipe threads.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.4.3.9": [
+    {
+      "在较小尺寸的泵上，螺纹固定或焊接到泵体上的首段管路长度不超过 150mm 是不现实的。在这种情况下，典型的做法是在管路上的第一个法兰或阀门配件 之前，配置一个弯头或将管路弯曲90°。集合式的排液管路也可能超过150mm 的最大长度。这种排液管路可以从底座上用管夹支撑。On smaller sizes of pumps it is impractical to have the first segment of piping which is screwed or welded to the casing to be straight and not more than 150 mm long. In such cases it is typical to have an elbow or a 90 degree bend in the pipe prior to the first flange or valve fitting. Manifolded drains may also exceed the 150 mm max length. These will be supported from the baseplate.": "强制-澄清-Mandatory-Clarification"
+    }
+  ],
+  "6.4.3.10": [
+    {
+      "在两个正交平面上进行用角板支撑管路是多数石油公司长期以来的规范要求。 深蓝非常了解这种方法，并且可以在加价的前提下满足。注意，这只适用于承 插焊或对焊管路，螺纹管路和整体法兰接口不适用角板支撑。如要求在螺纹管 路和整体法兰接口增加支撑，投标必须提出偏离。Piping gusseted in two orthogonal planes has been a long standing requirement of several oil company specifications. The means to provide this feature is well-known to Deepblue and can be included at extra cost. Note this applies to SW or BW piping only - gusseting is not available on threaded piping or integrally flanged connections. If specified on threaded piping or integrally flanged conections, take exception in tender.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.4.3.14": [
+    {
+      "可以被视为自排气的泵（液体能够充满叶轮入口）包括 OH2，带朝上管口的 BB2和带朝上管口的BB5。所有其他泵和上述泵的其他结构，都需要在启动前 确保有排气口并进行排气。注意：BB2和BB5的泵体排气口也可以作为首级 密封冲洗的连接口。首级密封冲洗可能需要在启动前进行排气。Pumps which can be considered self-venting (ability of liquid to fill the eye of the impeller) include OH2, BB2 with Top Nozzles, BB5 with Top Nozzles. All other pumps and other configurations of above pumps, will require a vent connection and venting before startup. NOTE: The casing vent on BB2 and BB5 may also serve as primary seal flush connection. The primary seal flush may require venting before startup. 所有的泵都提供至少一个排液口，但双壳立式 VS6 泵除外（参考第 9.3.13.5 段）。如果指定，这些泵可以提供一个从筒袋到地面的排液管路，否则不提供 排液。卧式泵提供一个低点泵体排液口，该排液口将被塞住或连接管路，这一 点在我们的建议中已经指出。通过在吸入室流道低点加入2个额外的排液口， 可以实现承压泵体的完全排水。这些都需要加价。当有需要时，密封冲洗管路 可提供高点排气口。All pumps will be supplied with at least one drain connection with the exception of Double Case Vertically Suspended VS6 Pump Types (Refer to Para 9.3.13.5). When specified these pumps will be supplied with a piped drain from the suction can to the surface. Otherwise no drain will be provided. Horizontal pumps will be supplied with a low point case drain which will be plugged or piped as noted in our proposal. Complete drainage of the pressure casing can be provided by including 2 additional drains at the low points of the suction inlet passageway. These are added at extra cost. When required, high point vents will be furnished in the seal flush piping": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.5.1": [
+    {
+      "我们可以证实，深蓝壳体的强度足以承受表5中管口载荷的两倍，不会产生变 形，影响泵或密封的运行。（按要求满足第6.3.3段）。可接受的载荷和力矩 的评估需考虑安装在底座上的设备，以及泵体和底座的组合变形对泵和驱动机 的对中影响。根据作用在泵管口上的所有合力和和力矩，可以计算出联轴器处 的预期轴挠度（解析质心）。通过这种方法，我们可以确认，按照表5的管口 力和力矩，轴的挠度都在表13规定的范围内。We can demonstrate that the strength of Deepblue pump casing is adequate to withstand two times the nozzle loads in Table 5 without distortions, which could impair operation of the pump or seal. (As required to satisfy Para 6.3.3). Evaluation of acceptable applied loads and moments is made considering the assembled unit mounted on its baseplate and how the combined casing and baseplate distortion will affect the pump to driver alignment. Anticipated shaft deflection at the coupling is calculated using the combined resultant of all forces and moments acting on the pump nozzles (resolved at the centroid). By this method we are able to confirm that with Nozzle Forces and Moments per Table 5, shaft deflections are within the limits specified in Table 13. 深蓝技术公告已经发布，确认可接受符合表 5 所示的管口力和力矩的要求。 Deepblue Technical Bulletins are issued to confirm compliance of acceptable Nozzle Forces and Moments against Table 5.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.5.3": [
+    {
+      "对于泵体材质不是钢或合金钢，或管口大于 DN400 的泵，深蓝应提交与表 5 中的格式相对应的管口允许载荷。 For pump casings constructed of materials other than steel or alloy steel or for pumps with nozzles larger than DN 400, Deepblue shall submit allowable nozzle loads corresponding to the format in Table 5.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.5.4": [
+    {
+      "所使用的管口载荷坐标系符合ISO 1503和API 610 8th至11th的要求。为了 符合ISO的坐标系统，在8th之前的任何管口载荷表示格式可能都需要更改。 在深蓝这可能仍会影响旧的外形图格式和技术公告。许多买方的坐标系也不同 于当前的标准——在开始管口载荷协商之前，确保在X、Y和Z方向上达成一 致。Coordinate system for Nozzle Loads used is consistent with ISO 1503 and with API 610 8th through 11th Editions. Any formats of Nozzle Load representations existing prior to 8th Edition may need be changed in order to comply with the ISO System of co-ordinates. In Deepblue, this may still affect older Outline drawing formats and Technical Bulletins. Many purchaser coordinate systems also differ from this current standard - be sure to reach agreement on direction of X, Y, and Z before beginning any nozzle load value discussions.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.5.5": [
+    {
+      "附件F仅供管路设计人员使用，深蓝不会将其用于设计或代表买方进行评估。 我们的泵是按照第6.3.3和6.5.1段的要求设计的。Annex F is for the piping designer only and will not be used by Deepblue for design or to make evaluations on behalf of the purchaser. Our pumps are designed to meet the requirements of paragraph 6.3.3 and 6.5.1.": "非强制-报价参考-Tutorial-Info"
+    },
+    {
+      "当买方指定泵组设计为“两倍表5管口载荷”时，买方不能将此标准应用于附 件F。[承压泵体的设计不能满足表5管口载荷的4倍]。When the purchaser specifies the pumpset be designed for \"two-times Table 5 nozzle loads\"; The purchaser cannot apply this criteria to Annex F. [The pressure casing will not be designed to accommodate four-times Table 5 nozzle loads].": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.6.10": [
+    {
+      "第 6.9.3.2 段（振动）要求，对于装有流体动压轴承和近贴传感器的泵，应始 终使用非接触振动传感器在试验台上测量轴的振幅。在装有流体动压轴承的卧 式泵上，深蓝的标准操作是提供带有 X 和 Y 传感器钻孔的轴承箱体。 Para 6.9.3.2 (Vibration) requires, on pumps fitted with hydrodynamic bearings and proximity probes, that shaft amplitude shall always be measured on the test stand using non-contacting vibration probes. On horizontal pumps fitted with hydrodynamic bearings, Deepblue standard practice is to provide bearing housings with X and Y probe drillings. 然而，只有在我们的建议书中指定时，轴才会为近贴传感器做适当的准备（见 6.6.11和6.6.12）。如果需要，可以添加。已付费情况下，我们可以用深蓝的 近贴传感器进行测试；需相应加价。 However, the shaft will only be appropriately prepared for proximity probes (see 6.6.11 and 6.6.12) when specifically denoted in our proposal. Add if required. If shaft preparation is purchased then we can test with Deepblue proximity probes; apply appropriate pricing.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.6.11": [
+    {
+      "当提供X-Y传感器时，请在投标书中说明，呈现不相容电性质的轴（如双相不 锈钢材质）可以用靶环。 When supplying X-Y probes, make comment in tender that target rings may be used on shafts that exhibit inconsistent electrical properties (e.g. Duplex SS).": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.6.12": [
+    {
+      "当提供 X-Y 振动传感器时，需增加硬件成本和额外的测试费用。 When supplying for X-Y vibration probes, add cost for hardware and additional testing allowance.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.7.4": [
+    {
+      "API 610 (ISO 13709)表6口环间隙作为标准设计。当需要热间隙时，需要修 正效率。喉部衬套和级间衬套间隙采用深蓝标准。API 610 (ISO 13709) Table 6 wear ring clearances are supplied as standard. Adjust efficiency when hot clearances are required. Throat bushing and Interstage bushing clearances will be Deepblue standard.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "若为了提高效率，使用减小间隙值的非金属口环，请与工厂联系。Contact factory for efficiency when reduced clearances are provided with non-metallic wear parts.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.8.1": [
+    {
+      "机械密封腔尺寸：本产品完全符合API 610 11th(ISO 13709:2009) 标准尺寸 （图 26 &表 7）和 API 682 4th(ISO 21049:2004) 的密封腔尺寸要求。 Mechanical Seal Chamber Dimensions: This product line complies fully with the seal chamber dimension requirements of API 610 11th Edition (ISO 13709:2009) Standard dimensions (Figure 26 & Table 7) and API 682 4th Edition (ISO 21049:2004).": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.8.8": [
+    {
+      "根据密封方案，不需要排气口，因为密封腔是自排气的。如果需要的话，在冲 洗管路中加高点排气口排气。请参考F章节--密封冲洗管路。 Depending on the seal plan venting is not required as seal chamber is self venting. If required, venting will be facilitated with high point vent connections in the flushing piping. Refer to section \"F\" - seal flush piping.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.8.9": [
+    {
+      "如有指定，额外的冲洗口需求请加价。如果提供Plan23或41，可能无法提供 额外的冲洗口——请与工厂联系，并按要求在报价中做出注释。If specified, add for additional flush port. Additional flush port may not be available if plan 23 or 41 are supplied - contact factory and make comment in tender as required.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.8.10": [
+    {
+      "除非我们在标书中特别注明，否则不提供密封腔的排气口。只有在必要时，深 蓝才会根据过去的经验对密封腔进行排气，以保证密封的可靠运行，需收取额 外的费用。Seal chamber vents are not included unless specifically noted in our tender. Seal chambers will only be vented if necessary for reliable seal operation at the discretion of Deepblue based on past experience and at an additional cost.": "强制-澄清-Mandatory-Clarification"
+    }
+  ],
+  "6.8.11": [
+    {
+      "如果指定要密封腔或泵夹套，请与工厂联系。密封供应商可能在压盖内提供夹 套。If seal chamber or pump jacketing is specified, contact factory. Seal vendor may be able to supply jacketing in the gland.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.8.13": [
+    {
+      "与密封供应商和买方协商静态和动态密封腔压力。BB 泵密封腔内的压力通常 接近入口压力。如预计有较高的入口压力或真空工况，建议进行协商，以免密 封失效。请参阅 3.23 及 3.25。使用产品密封腔压力工具计算密封腔压力。 Discuss static and dynamic seal chamber pressure with seal vendor and purchaser. Pressure in seal chamber on BB pumps is often at or near suction pressure. If high suction pressure or vacuum is expected, discussion is recommended to avoid seal difficulty or failure. Refer to 3.23 and 3.25. Use Product seal chamber pressure tool to calculate seal chamber pressure.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.9.1.2": [
+    {
+      "深蓝设计的符合API 610的单级、两级泵的一阶临界转速至少比额定运行转速 高20%。这些泵不需要横向分析，因为它们被认为是“经典刚性转子”设计。 Deepblue pre-engineered API 610, 1 & 2 stage pumps have 1st critical speed at least 20% above rated operating speed. Lateral analysis is not required for these pumps since they are considered \"Classically stiff\".": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.9.2": [
+    {
+      "除非在深蓝的投标书中有特殊说明，否则不提供扭矩分析。Torsional Analysis is not included unless specifically stated in the Deepblue Tender.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.9.2.1": [
+    {
+      "第6.9.21 b段：“阻尼响应分析”通常指有阻尼的响应分析，正确的术语应该 是“强迫响应分析”。Paragraph 6.9.2.1b: \"damped response analysis\" a response analysis is always damped, the correct term to be used is \"forced response analysis\" 第6.9.2.1c段：“目前为止，这种分析模式最常应用在分析启动同步电机上”。 这种说法是错误的。同步电机在离心泵中并不常用。最常见的应用是在分析异 步（感应）电机的启动和短路上。Paragraph 6.9.2.1c: \"by far, the most common application for this analysis type is the start-up of a synchronous motor\". This statement is wrong. Synchronous motors are not commonly used in centrifugal pump application. The most common applications are start-up and short-circuit of asynchronous (induction) motors.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.9.2.2": [
+    {
+      "可能需要进行扭矩分析。请参阅此段以确定是否需要此应用程序。注意，如果 分析是必要的，驱动机制造商必须提供转动惯量数据。需在报价中增加分析成 本（包括来自驱动机制造商转动惯量数据成本）。A torsional analysis may be necessary. See this paragraph to determine if required for this application. Note that driver manufacturer must provide mass elastic data if an analysis is necessary. Add cost of analysis (including cost of mass elastic data from driver supplier) in the proposal.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.9.2.3": [
+    {
+      "技术上，我们可以遵守。实际上没有必要进行这类分析，原因有二Technically we can comply with this. Practically it is not necessary to perform these type of analysis for two reasons： A. ASD (VFD)的故障通常是未知的。轴不需要承受VFD故障，但需要纠正。 ASD (VFD) malfunctions are generally unknown. Shaft trains are not required to withstand malfunctioning VFDs but rather VFD malfunctions need to be corrected. B. 以产生高扭矩谐波而闻名的变频调速技术并没有应用于离心泵（负载换向 逆变器(LCI)技术）。VFD technology known to produce high torque harmonics is not used in centrifugal pump applications (Load Commutated Inverter (LCI) technology).": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.9.2.4": [
+    {
+      "如果需要，增加分析的成本以及从驱动机供应商获得瞬态激励数据的成本。If required, add cost of analysis and cost of obtaining transient excitation data from driver supplier.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.9.2.5": [
+    {
+      "第 6.9.2.5c 段：深蓝认为 1 倍、2 倍运转速度不属于显著的扭矩激励频率。 Paragraph 6.9.2.5c: 1x, 2x running speed are not considered by Deepblue as significant torsional excitation frequencies. 第6.9.2.5h段：采用PWM技术的VFDs不显示“经典”的6倍、12倍、18 倍扭矩脉冲。把“发动机做功行程”和这个主题混在一起也是没有意义的。 Paragraph 6.9.2.5h: VFDs with PWM technology do not exhibit the \"classic\" 6x, 12x, 18x torque pulses. It also makes no sense to mix \"engine power strokes\" into this subject.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.9.3.8": [
+    {
+      "连续运转速度超过ePM公布的最大速度（章节E曲线和章节B的限制），请 与售前工程师联系。For continuous operation greater than max published ePM speeds (Section E curves and Section B limits), refer to ADVE.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.9.4.1": [
+    {
+      "如本段所述，我们现在可以平衡单级BB泵的整个转子，而不是仅平衡叶轮。 As noted in this paragraph, we can now choose to balance single stage BB rotors in lieu of balancing just the impeller.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.9.4.3": [
+    {
+      "API 610 对单级和双级两侧轴承支撑的转速低于 3800rpm 的泵转子平衡没有 要求。如果客户坚持要求转子平衡，则需增加转子平衡的费用。 Rotor balance is not required by API 610 on single and two stage between bearing pumps < 3800 rpm. If customer insists on rotor balance add cost of rotor balance.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.9.4.4": [
+    {
+      "如有指定，可加价做G1.0(4W/n)叶轮平衡，标准为G2.5 (8W/n)。 If specified, add for G1.0(4W/n) impeller balance. Standard is G2.5 (8W/n).": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.10.1.1": [
+    {
+      "深蓝在轴承选择方面的应用限制严格遵循表10所设定的参数。然而，应注意 避免在高能量项目中误用抗摩擦轴承，因为这些项目可能在不符合 BEP 的流 量条件下运行（如锅炉进料、焦化炉加料等）。关于轴承的类型和尺寸，请参考 产品手册 B 章节，关于进一步的建议，请参考 ePM 第 24.02 节轴承部分。 Deepblue application limits for bearing selection closely follow the parameters set by Table 10. However, caution should be used to avoid the misapplication of antifriction bearings in high energy services that may operate at flow conditions off BEP (e.g. boiler feed, coker heater charge, etc). Refer to product manual section B for bearing types and sizes, and to ePM section 24.02 Bearings, for further recommendations. 当深蓝的轴承尺寸与表10不同时，在标书中提供以下澄清：\"与表10不同的 轴承类型是根据深蓝的经验选择的\"。Provide the following clarification in the tender when Deepblue 's bearing sizing differs from Table 10: \"Bearing type selected based upon Deepblue 's experience which differs from Table 10\".": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.10.1.4": [
+    {
+      "对于带360°托架的径向剖分泵 For radial split pumps with 360° bracket： 根据API 610的要求，推力球轴承组件标准设计采用两组配对的7300系列， 单列40°（0.7弧度）普通匹配，无预紧的角接触轴承。标准配置机加黄铜保 持架。采用SKF BECBM命名或等效命名。在所有的BS轴承（球/瓦）安装 中，轴承背靠背安装。背靠背安装是球/球安装的标准，其转速与轴承平均直径 的乘积等于 370000。在这个值和 400000 之间，面对面安装是标准安装。超 过400000，应采用BS轴承（球/瓦）。在环境温度高于49°C或能量密度超过 4,000,000 kW-rpm的设备中，面对面安装也是BB轴承（球/球）的标准安装。 As required by API 610, ball thrust bearing assemblies use duplex 7300 series, single row 40 degree (0.7 radian) angular contact bearings, universally matched without preload as standard. Machined brass retainer is standard. SKF BECBM designation or equivalent. Bearings will be mounting Back to Back in all Sleeve / Ball arrangements. Back to Back mounting is the standard for Ball / Ball arrangements up to such speeds that the product of speed and bearing mean diameter equals 370,000. Between that value and 400,000, Face to Face mounting is standard. Above 400,000, Sleeve / Ball should be employed. Face to Face mounting is also standard for Ball / Ball arrangements in units that will operate in an ambient temperature above 49°C or that exceed an energy density of 4,000,000 kW-rpm.": "强制-澄清-Mandatory-Clarification"
+    },
+    {
+      "对于轴向剖分以及所有带180°托架的泵 For axially split and all pumps with 180 bracket： 根据API 610的要求，推力球轴承组件标准设计采用两组配对的7300系列， 单列40°（0.7弧度）普通匹配，无预紧的角接触轴承。标准配置机加黄铜保 持架。采用SKF BECBM命名或等效命名。在所有的BS轴承（球/瓦）安装 中，轴承背靠背安装。背靠背安装是 BB 安装的标准，但环境温度超过 49°C 或能量密度超过4,000,000 kW-rpm（5,400,000 hp-rpm）的工况除外。在这些 工况中，经深蓝工程批准后，将采用面对面的安装方式。As required by API 610, ball thrust bearing assemblies use duplex 7300 series, single row 40 degree (0.7 radian) angular contact bearings, universally matched without preload as standard. Machined brass retainer is standard. SKF BECBM designation or equivalent. Bearings will be mounting Back to Back in all Sleeve / Ball arrangements. Back to Back mounting is the standard for Ball / Ball arrangements except in units that will operate in an ambient temperature above 49°C or that exceed an energy density of 4,000,000 kW-rpm (5,400,000 hp-rpm). In those units Face to Face mounting will be employed after Deepblue engineering approval.": "强制-澄清-Mandatory-Clarification"
+    },
+    {
+      "对于任何超过4,000,000能量密度或环境温度超过49°C的工况，请获得售前 工程师的批准（负载能力不变）。Obtain engineering approval (load capacity unchanged) from ADVE for any operation beyond 4,000,000 energy density or ambient temp above 49°C.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "API 610第11版要求推力球轴承组件标准设计采用两组配对的7300系列，单 列40°（0.7弧度）背靠背安装，普通匹配，无预紧的角接触轴承。标准配置 机加黄铜保持架。采用 SKF BECBM 命名或等效命名。API 610 11th ed. requires ball thrust bearing assemblies use duplex 7300 series, single row 40 degree (0.7 radian) angular contact bearings mounted back to back, universally matched without preload as standard. Machined brass retainer is standard. SKF BECBM designation or equivalent.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.10.1.5": [
+    {
+      "见下段6.10.1.6意见。See comment to para. 6.10.1.6 below.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.10.1.6": [
+    {
+      "深蓝绝大多数采用球/球轴承的泵都超标达到API 610第6.10.1.6段25000小 时L10轴承系统的寿命要求，自然也超标达到第6.10.1.5段25000/16000小 时单个滚动体轴承L10寿命要求。轴的两端处于相同的压力，所以轴向推力在 泵的工作区域内一般是平衡的。双蜗壳或导叶结构能最大限度地减少径向负 荷。轴承的尺寸是在介质为水的工况下设计的，大多数泵用于碳氢化合物的运 输，具有较低的比重.，因此径向载荷较低。如果客户要求进行轴承寿命计算， 或在任何STARS表明所需的轴承寿命没有达到的情况下，请联系售前工程师。 The vast majority of Deepblue between bearing pumps with ball/ball bearings will exceed the API 610 para 6.10.1.6 25,000 hour L10 bearing system life requirement and thus the para 6.10.1.5 25,000 / 16,000 hr individual rolling element bearing L10 life requirements. Both ends of the shaft are under the same pressure so axial thrust is generally balanced in the operating region of the pump. Double volute or diffuser construction minimizes radial loads. The bearings are sized for water service and most pumps are used for hydrocarbon service with lower sp.gr. And thus lower radial loads. If a customer requests bearing life calculations or in any instances where STARS indicates that the required bearing life is not met then contact ADVE.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.10.1.8": [
+    {
+      "球轴承和轴过渡配合（js5），与轴承箱体间隙配合（G5），虽然没有严格按照 ABMA 7的规定，但为了便于拆卸以及轴承热膨胀，轴承制造商推荐这种配合。 如果轴承配合是由客户指定的，请在投标书中注明我们使用什么轴承配合。如 果客户不允许在轴与轴承过渡配合，在OED中说明客户指定的轴承配合。 Ball bearings have a Transition fit directly onto shaft (js5), and clearance in housing (G5), which, although not strictly in accordance with ABMA 7, is recommended by bearing manufacturer for ease of disassembly and hot service applications. If the bearing fits are specified by customer, make a note in tender on what bearing fits we use. If customer will not allow transitional bearing fit on shaft, state in OED what customer specified bearing fit is to be.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.10.2.4": [
+    {
+      "请参阅产品手册，以确定是否需要辅助冷却功能。Refer to Product Manual to determine if auxiliary cooling features are required.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.10.2.5": [
+    {
+      "深蓝可以遵守。当需要水冷或产品冷却时，标准轴承组件使用绕片管冷却。如 果需要，增加绕片管和冷却系统管路的成本，包括SFI和阀门成本。 Deepblue can comply. Standard Bearing Assemblies use finned tube coolers when water-cooling or product cooling is required. Add cost of finned tube cooler and cooling system piping (CWP) with SFI and valves if required. 注：如果对轴承和/或密封冲洗冷却器进行了报价，而冷却系统管路没有报价， 则标书中对段7.5.1.5和7.5.1.6必须提出偏离。Note: If bearing and/or seal flush coolers are quoted and CWP is not quoted, exception MUST be taken in the tender to paragraph 7.5.1.5 and 7.5.1.6.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.10.2.6": [
+    {
+      "见 6.1.23。See 6.1.23": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.10.2.7": [
+    {
+      "纯油雾润滑不使用甩油环，扣除甩油环成本。吹扫油雾润滑采用甩油环——在 OED 中标明纯油雾或吹扫油雾，这样工厂就会知道在油雾接头后面、联轴器 罩上开凹口。Pure mist lubrication does not use oil rings. Deduct for deletion of oil rings. Purge mist uses oil rings - denote Pure or Purge mist on OED so factory will know to notch coupling guard at rear oil mist tap.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "滑动轴承必须始终具有主动向轴颈供油的方式，可以通过加压供油或甩油环润 滑。吹扫油雾系统可以通过将湿气和污染物挡在轴承箱体的大气层之外来补充 这种润滑方法。不允许在一个流体动压轴承上单独使用纯雾润滑系统。Sleeve Bearings must always be provided with a positive means of supplying oil into the journal either by pressurized oil supply or by ring oil lubrication. Purge Mist systems can be used to supplement this lubrication method by keeping moisture and contaminants out of the housing atmosphere. A pure mist lubrication system alone on a hydrodynamic bearing is not allowed.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "BB轴承（球/球）箱体上的油雾接头的位置要满足油雾从进口流经轴承再到出 口的要求。Oil mist taps on Ball/Ball bearing housings are located so as to require the mist to flow through the bearing to get to overflow tap.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.10.2.10": [
+    {
+      "当需要安装振动传感器时，增加适配器和传感器的成本。M8、1/4 UNF和1/2 NPT螺纹接口可用。When required for vibration transducer mounting, add for adapters and transducers. M8, 1/4 UNF and 1/2 NPT threaded connections are available.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.11.1": [
+    {
+      "可接受的润滑油详见安装操作和维护手册(IOM)。粘度需求可能随温度变化。 Acceptable lubricants are detailed in the Installation Operation & Maintenance Manual. (IOM). Viscosity needs may vary with temperature.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.12": [
+    {
+      "当填写OED时，报价和销售人员要在使用的ePM中的材料页、剖面图页、密 封冲洗管路页、排气排液管路页和底座页，指出哪些部分是客户要求从指定供 应商/国家采购，而不是来自深蓝合格供应商。另外，OED必须明确这些供应 商。When filling out the OED, Tendering and Sales are to use the Material pages, the Cross Section pages, the Seal Flush Piping pages, the Vent and Drain Piping pages, and the Baseplate pages in the ePM to indicate which parts may NOT be globally sourced from Deepblue qualified suppliers, and must be sourced from specified suppliers / countries. In addition, those parts / components requiring specified sourcing are to be indicated on the OED pages.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.12.1.1": [
+    {
+      "深蓝已经完成了所有推荐磨损部件材料组合的磨损测试。这些测试数据构成了 口环组合的基础，这些口环组合将在增补的产品手册中加以说明。 Deepblue has completed a comprehensive wear part galling test program on all recommended wear part material combinations. This test data forms the basis for the wear ring combinations which are noted on subsequent product manual pages. 这些可能会偏离API 610附件H，需在标书中增加ePM中的材料页，以取得 客户理解。These may deviate from API 610 Annex H. Include the applicable product manual material page in the proposal to allow the customer to understand.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.12.1.2": [
+    {
+      "卖方是一家全球性公司，其供应链包括自己的工厂以及其认证合格的分供应商 的工厂、铸造厂等。本提案中的定价和交付基于使用卖方合格的全球供应链， 包括下面列出的指定的次级供应商（如果有）。卖方有权根据实际采购时的条 件，自行决定用同样合格的来源和合适的材料替代本建议书中指定的任何分供 应商和材料。使用采购方指定的其他来源可能会影响交货时间和成本。Seller is a global company that sources from a supply chain consisting of its own factories as well as those factories, foundries, etc of its qualified sub- suppliers. Pricing and delivery offered in this proposal are based upon the use of Seller's qualified global supply chain, including specific sub- suppliers listed below, if any. Seller reserves the right to substitute, at its sole discretion, any sub-supplier and material specified in this proposal with similarly qualified sources and suitable material based on conditions at the time of actual purchasing. Use of purchaser-specified other sources will likely affect leadtime and cost.": "强制-澄清-Mandatory-Clarification"
+    },
+    {
+      "确保标书中包含适当的产品手册材料表。注意脚注，并记录对该表的所有免责 条款或偏差。Ensure the appropriate Product Manual materials sheet is included in the tender. Pay attention to the footnotes and document all exceptions or deviations to that sheet.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.12.1.8": [
+    {
+      "如果买方要求提供泵体、吸入盖、叶轮和轴的合格材料测试报告(CMTR)(3.1)， 请加价。Add if Certified Material Test Reports (CMTR's) (3.1's in Europe) are required by purchaser for casing, cover(s), impeller(s) and shaft. 如果口环和其他部件需要CMTR(3.1)，请再加价。Add more if CMTR's (3.1's) are required on wear parts and other components. 如最低金属设计温度低于- 29°C，增加特殊材料成本（如低温碳钢或C-6代替 CS铸件）和夏比冲击试验成本。Add for special materials (e.g. LCB or C-6 instead of CS casing) and for Charpy impact testing if minimum design metal temperature is lower than minus 29°C.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "深蓝将确保所有情况下的材料符合要求，但只有在购买时才会提供书面证书。 根据标准要求，泵体、泵盖、叶轮和轴的合格材料测试报告(CMTR)(3.1)，将 保留在深蓝[参考ASME Section VIII Div 1, Part UG-11 paragraph (a)(1). 。 Deepblue will ensure material compliance in all instances but will provide certification only when this is purchased.Certified Material Test Reports (CMTR's) (3.1.'s in Europe) for pressure casing, impeller, and shaft are retained at Deepblue as standard. [Ref. ASME Section VIII Div 1, Part UG-11 paragraph (a)(1).]": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.12.1.9": [
+    {
+      "在接受订单前，确保买方确认并量化所有腐蚀性介质。Before accepting the order, ensure that any erosive or corrosive agents are identified and quantified by the purchaser.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.12.1.10": [
+    {
+      "参考产品手册特定磨损工况推荐，如果没有，则使用通用E01.01中规定的涂 层材料。Refer to Abrasive Services recommendations in specific pump range of Product Manual or if none exist, use generic Series E01.01 for identification of coating materials which are to be proposed for such services.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "当有规定时，增加磨损材料涂层。当指定耐磨涂层时，由于叶轮制造周期的影 响，叶轮平衡可在涂层前做，但涂层后不能保证平衡等级。根据经验，若需提 供涂层，12 和 24 W/N 是平衡效果最好的。无论如何，深蓝都将保证振动在 ISO 13709:2009 (API 610第11版)规定的范围内。出售时，在标书的强制性 说明中加上本段最后3句。见8.3.4.3对NPSH3的影响和该段所要求的强制 性澄清。When specified, add for abrasive resistant coatings. Due to the manufacturing cycle of the impeller when abrasive resistant coatings are specified, component balance can be certified prior to coating, but not guaranteed after coating. Historically 12 & 24 W/N is the best Deepblue can offer once the coating is applied. Deepblue will however, guarantee vibration within limits given by ISO 13709:2009 (API 610 11th edition). When sold, add the last 3 sentences of this action to the mandatory clarifications in the tender. See 8.3.4.3 for affect on NPSH3 and mandatory clarification required for that paragraph.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "用美制比转速和下列公式，扣除磨损工况涂层下降的效率点。叶轮入口涂层后， 增加相同数量的 NPSH3（英尺）Deduct the following efficiency points for abrasive service coated pumps using the specific speed in US units and the following formula. When the impeller eye is coated, increase the NPSH3 (in feet) by the same amount： 5.77 - 0.005 * NS + 2.11E-06 * NS^2 - 2.88E-10 * NS^3": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.12.1.12": [
+    {
+      "如6.12.1.1所述，买方有责任规定材料，在要求硬度控制的数据单上勾选复选 框，并指明NACE MR0175 (ISO 15156)或NACE MR 0103是否适用。受压 的磨损件如泵体口环，不需要硬度控制，因此可使其硬化。As stated in 6.12.1.1, It is the purchaser's responsibility to specify the materials, to check the box on the datasheet requiring hardness control, and indicate whether NACE MR0175 (ISO 15156) or NACE MR 0103 are applicable. Wear parts in compression such as case wear rings, do not need to be hardness controlled and thus may be hardened.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.12.1.12.5": [
+    {
+      "如果买方规定了要求，或数据单上勾选了硬度控制框，则叶轮硬度应符合 NACE MR0175 (ISO 15156-1)或NACE MR0103。If required by purchaser's spec, or the hardness control box on the datasheet is checked, add for impeller hardness to comply with NACE MR0175 (ISO 15156-1) or NACE MR0103.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.12.1.12.6": [
+    {
+      "如果勾选了材料标题下的复选框，并符合 6.12.1.12.1，则增加要符合 NACE MR0103或MR0175的成本。泵体口环和其他承压部件不受NACE MR 0103 或MR0175要求的硬度限制。一些技术规范与API 610 11th段6.12.1.12.5比 较，可能要求更多的组件硬度控制，在需要时增加成本。Add to comply with NACE MR0103 or MR0175 if the box under the material heading is checked to comply with 6.12.1.12.1. Casing wear rings and other parts in compression are not limited by the hardness limitations imposed by NACE MR 0103 or MR0175. Some specs may require more component hardness control than others - compare against API 610 11th edition para 6.12.1.12.5 and add where necessary to comply.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "湿的 H2S 会引起应力开裂。买方有责任规定材料和硬度控制。Wet H2S can cause stress cracking. The purchaser is responsible for specifying materials and hardness control.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.12.1.15": [
+    {
+      "要求采用钢轴承箱体和钢立式驱动机支架。深蓝执行。Requires steel bearing housings and steel vertical driver supports. Deepblue comply.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.12.2.3": [
+    {
+      "ASTM铸件材料如果没有等效ASME规范，则应视为属于下列ASME \"P\"组， 用于焊接工艺评定 ASTM casting materials which do not have equivalent ASME specifications shall be considered as belonging to the following ASME \"P\"编号组 number groups for weld procedure qualification purposes： (ASTM材料Material)- (ASME \"P\"编号组ASME \"P\" number group) 1 - 1 2 - 1 8 - 6 9 – 8 10 - 8 11 - 8 12 - 10 h 注:铸件等级CG3M应视为ASTM第9类。Note: Casting grade CG3M shall be considered to be an ASTM category 9.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.12.2.5": [
+    {
+      "焊接修复的批准只适用于压力边界组件，并扩展至客户能够确保以下几点 Approval of repair welds is only offered for pressure boundary components, and is extended to the degree that the customer is able to assure that： 1) 缺陷清除检查到要求的水平。The defect excavation is inspected to the required level. 2) 建议的焊接程序适用于修复并被批准使用（如果合同要求批准）。The proposed weld procedure is appropriate for the repair and approved for use (if approval is required by the contract). 3) 任何必要的焊后热处理均可适应。Any required post weld heat treatments are accommodated. 4) 按合同要求进行最终的修复区域检查。The final repair area inspections are as required by the contract. 5) 所有合同要求的修复记录都有序保存。All contractually required repair records are in order. 除非合同文件中有明确规定，需要焊接修复批准时，不提供基于缺陷清除的尺 寸、类型、数量或位置拒收的焊缝修复。Unless specifically stated in the contract documents, weld repair approvals do not provide rejection of a proposed repair weld based on defect excavation size, type, number or location. 基于这些问题而制定的拒收焊接修复的标准，只有在报价阶段确定后，才能对 其价格和交货的潜在影响进行评估，才能被深蓝接受。在这种情况下，当合同 要求区分主要和次要缺陷时，对压力边界铸件应根据ASTM A703 段 S20.1 评估。对非压力边界铸件，只认为贯穿缺陷是重大缺陷。 A criterion for rejecting repair welds, based on these issues, is acceptable to Deepblue only when it is established at the proposal stage where it can be evaluated as to potential impact on price and delivery. In that case differentiation between major and minor defects, when required by the contract, shall be per ASTM A703 para. S20.1 for pressure boundary castings. For non-pressure boundary castings, only through-wall defects shall be considered major.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.12.2.6": [
+    {
+      "当需要满足ASME B&PV规范第VIII卷第1部分冲击试验免责要求时，深蓝 保留淬火和回火条件下的承压碳钢铸件处理的权利。Deepblue reserves the right to furnish pressure containing carbon steel castings in the quenched and tempered condition when required to meet ASME B&PV Code Section VIII impact test exclusion requirements.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.12.3.1": [
+    {
+      "为了焊接工艺的鉴定，ASME IX中未列出的材料应视为属于基于化学分析、机 械性能和焊接性等效分配的“P”编号组。未指定属于ASME“P”编号组的锻造产 品，应视为属于等效铸造材料指定的“P”编号组。For weld procedure qualification purposes, materials not listed in ASME IX shall be considered to belong to a \"P\" number group allocated on the basis of equivalence of chemical analysis, mechanical properties and weldability. Wrought product forms, not designated as belonging to an ASME \"P\" number group, shall be considered as belonging to the \"P\" number group designated for the equivalent cast material. 铸造厂提供的承压泵体和叶轮铸件应符合适用ASTM或ASME材料规范的焊 后热处理要求。Castings for pressure casings and impellers, as supplied by the foundry, shall be in compliance with the post weld heat treatment requirements of the applicable ASTM or ASME material specifications. 在制造过程中(或制造开始后)发生在承压壳体或叶轮上的铸造修补焊接，应根 据第VIII卷第一章C篇适用的焊接要求进行焊后热处理。Casting repair welds that occur on pump pressure casing(s) and impeller(s) during manufacturing, (or after start of manufacturing), shall be post weld heat treated as required for fabrication welds by the applicable part of Sub Section C of Section VIII, Division 1. 用于制造泵的压力边界部件的板材的 MT 或 PT，只有在深蓝标书中明确列出 时才进行。MT or PT of plate edges used to fabricate pressure boundary parts of the pump are only included if specifically listed in the Deepblue tender.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.12.3.2": [
+    {
+      "除了水压试验和MSS SP-55铸件目视检验外，无损检测(NDE)不包含在基础 价格中。确保增加MT, PT, RT或UT的成本，并在投标中包括对可达区域的 说明。如有疑问，联系售前工程师。 Non-Destructive Examination (NDE) other than hydrotest and MSS SP-55 visual inspection of castings, is NOT included in the basic price. Be sure to add for MT, PT, RT or UT, and include explanation of accessible areas in tender. If in doubt contact ADVE.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.12.3.4": [
+    {
+      "增加辅助接口焊缝 MT 或 PT 的成本。如果需要 RT，请与工厂联系以确定额 外增加的价格和交货期。见8.2.2.1表14 Add for cost of MT or PT of auxiliary connection welds. If RT is required, contact factory for pricing and leadtime addition. - See 8.2.2.1 Table 14. 注 Note：管路连接到泵体上的焊缝符合ASME第IX卷的压力边界焊缝标准， 而不是符合ANSI B31.3的管路焊缝标准，在讨论RT焊缝之前应明确这一点。 The weld that joins the pipe to the casing is a pressure boundary weld to ASME Section IX, not a pipe weld to ANSI B31.3 which discusses RT of random welds.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.12.4": [
+    {
+      "除非在我们的标书中特别注明，否则泵不能用在-29°C以下工况。对于这些工 况，我们的标书中必须明确低温材料、冲击试验和其他限制。参考低温投标指 南。Pumps are not to be applied below -29°C unless specifically noted in our tender. Low temperature materials, impact testing and other limitations will be addressed in our tender for such applications. Refer to Low Temperature Tendering Guides.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.12.4.1": [
+    {
+      "只有在我们的标书中明确指出时，才会提供冲击试验。多数情况，LCB低温碳 钢要增加冲击试验成本。Impact Testing will only be supplied when specifically denoted in our proposal. In most cases, LCB low temperature carbon steel adder includes impact testing adder.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "当客户的数据单中没有规定最低设计金属温度（MDMT）时，深蓝将以最小液 体输送温度来决定是否进行冲击试验。When the minimum design metal temperature (MDMT) is not specified on the customer's Data Sheet, Deepblue will utilize the minimum liquid pumping temperature when evaluating impact test requirements. 只有当泵承受最大入口压力时，与材料应力密切相关的冲击试验才使用环境温 度来评价。Surrounding ambient temperature will only be used when evaluating impact test requirements as it pertains to the pump material stress when the pump is subject to maximum suction pressure. [推理：泵材料只有在工作时才会受到高应力。运行时，泵金属温度将等于液体 温度]。请咨询售前工程师。[Reasoning: The pump material will only be subjected to high stresses when operating. When operating, the pump metal temperature will be equal to the liquid temperature]. Refer to ADVE.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "6.12.4.4": [
+    {
+      "公称截面或厚度应定义为承压部件的最小设计厚度。Nominal section or thickness shall be defined as the minimum design thickness based on pressure retention only.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "6.12.4.5": [
+    {
+      "深蓝设计仅符合 ASME 第 VIII 卷关于冲击试验要求的规定。Deepblue shall comply only to the rules of ASME Section VIII with regard to impact testing requirements.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "7.1.3": [
+    {
+      "向驱动机供应商询价时，如果驱动机的质量大于225公斤(500磅)，则要求驱 动机配备垂直千斤顶螺钉。Advise driver suppliers when obtaining quotations from them that the driver is required to be provided with vertical jackscrews if it has a mass greater than 225 kg (500 lb).": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.1.4": [
+    {
+      "电机功率选择(包括安全系数)要符合表 12。Size motor drivers (including service factor) according to Table 12. 注：一些客户规范要求泵驱动机功率应在额定曲线的末端(特别是在水或锅炉 给水泵工况)，有些客户不允许使用电机的安全系数。Note: Some customer specs require that the pump driver sized for power at end of rated curve (especially on water or boiler feed services). Some don't allow use of the motor service factor. 核查客户泵，驱动机型号，驱动机规范。警告：不要销售低于80%电压启动的 电机，因为电机扭矩会根据电压的平方变化----它可能无法启动泵！Check customer pump, driver sizing or driver specifications. Warning: Do not sell less than 80% reduced voltage starting as motor torque varies as square of voltage - it may not start the pump! 包括泵和密封启动扭矩，这些扭矩在最大入口压力下可能会增大。显然，电机 必须在降低电压条件下克服这些扭矩值。Include both pump and seal starting torque, which may increase at maximum suction pressure. Clearly the motor must overcome these values under reduced voltage conditions.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "API 610要求最小电机功率为4kW (5 hp)。深蓝建议不要在API泵上销售比这 功率还小的电机。API 610 requires min motor size of 4kW (5 hp). Deepblue recommends not selling motors smaller than this on API pumps.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "7.1.6": [
+    {
+      "为电机制造商提供80%电压启动要求的建议。包括在最大入口压力下，泵和密 封启动扭矩会增大的要求。Advise motor manufacturer of 80% voltage start requirement. Include both pump and seal starting torque requirements, which may increase at maximum suction pressure.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.2.4": [
+    {
+      "请参阅对这些规范的注释，并在深蓝标书上附上联轴器报价。See comments to these specifications with coupling quote attached to Deepblue tender.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.2.8": [
+    {
+      "锥孔联轴器是深蓝两侧轴承支撑的API泵的标准配置。Tapered bore coupling is standard on Deepblue between bearing API pumps.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "7.2.10": [
+    {
+      "液压拆卸联轴器和所需工具需加价。Add for cost of hydraulic fit coupling and any tools required.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.3.2": [
+    {
+      "在大型卧式和立式电机上有大型主接线盒，买方可能需要为主接线盒提供单独 的支撑。主接线盒可能需要在运输过程中被拆除。我们鼓励在早期订货阶段对 此进行协商。 On large horizontal and vertical motors with large main conduit boxes, purchaser may have to provide separate support for main conduit box. Main conduit box may have to be removed for shipment. Discussion is encouraged during early order phase.": "强制-澄清-Mandatory-Clarification"
+    }
+  ],
+  "7.3.5": [
+    {
+      "如果需要，可加价提供底座平整度验证。底座安装面是在非受力状态下支承在 工作台上加工而成的，因此表面是均匀平整的。Add cost for verification of flatness if required. Mounting surfaces are machined with baseplate supported on table in unstressed state, so surfaces are uniformly flat. 若需要验证要增加价格，包括使用机械水平或其他方法来确认安装表面的平整 度和平行度，并提交合格证。Verification adder covers use of machinist level or other methods to confirm flatness and parallelism of mounting surface and submit certification.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.3.6": [
+    {
+      "如果客户规定设备底脚下的垫片为不锈钢材质，需加价。Add cost if stainless steel spacer under equipment feet is specified by customer.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.3.7": [
+    {
+      "如果密封焊接（连续焊）不是底座标准焊接，需加价。 Add cost to seal weld baseplate if not already standard.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.3.13": [
+    {
+      "当客户规定时增加非灌浆底座的成本。Add cost of non-grouted baseplate when specified.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.3.15": [
+    {
+      "深蓝底座在所有情况下都提供至少4个吊耳。这些吊耳被设计并安装用于所有 设备的吊装。超过NEMA基座号额定范围的大尺寸的驱动器会造成搬运问题。 Deepblue baseplates will in all cases be furnished with a minimum of 4 lifting lugs. The lugs will be designed and arranged for lifting of all equipment. Oversize drivers exceeding the range of NEMA Frame ratings can give handling problems. 这些设备的额外质量和体积意味着安装有驱动机的吊装件可能超过车间的起 重和运输能力。 Additional mass and bulk of these items means that the provision of a single lift with the driver mounted can exceed shop lifting and shipping capacities. 在这种情况下，常用做法是在运输时将驱动机拆除。在大型电机上，由于尺寸 原因，接线盒通常与电机分开运输。 Common practice in these instances is to remove the driver for shipment. On large motors, the conduit box is often shipped separate from motor due to size.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "7.3.21": [
+    {
+      "与工厂联系确定管口载荷测试的额外成本和交货期。这些测试按照深蓝在测试 前提交的书面程序进行。测试既昂贵又费时。所有深蓝的 API 底座都符合要 求。Contact factory for nozzle load testing cost and leadtime addition. Such tests will be performed to Deepblue's written procedure submitted for information prior to the test. The test is expensive and time consuming. All Deepblue API baseplates comply with the requirements.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.4.2.1": [
+    {
+      "请参阅E01.20、E01.21、E01.22和E01.2仪表与API 670的偏差，并将偏差 包含在报价中。Refer to E01.20 、E01.21、E01.22 and E01.2 for instrumentation comments to API 670 and include in tender.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.4.2.2": [
+    {
+      "深蓝建议不要在多级对称布置叶轮或单级双吸泵上安装轴向位移探头，因为这 种叶轮布置产生的轴向位移很小。如果客户想要轴向位移指示，我们建议只安 装一个传感器。理由为节约成本及减少仪器误差。根据API 670，驱动机（而 不是泵）上将在每个旋转周长上提供一个传感器（如果指定）。请在询价单中 告知驱动机制造商这一要求。Deepblue recommends against installation of axial position probes on multistage opposed impeller or single stage double suction pumps due to the low level of axial displacement generated in this arrangement. If customer wants an axial position indication, we advise installation of only one probe. Reasoning = cost savings and reduction of instrument errors. Per API 670, a one event per revolution probe will be provided (when specified) on the driver (not the pump). Advise driver manufacturer of this requirement in your RFQ to them.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "如有指定要求，为仪表供应加价。When specified, add cost for provisions and instrumentation if requested.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.4.2.3": [
+    {
+      "深蓝建议使用传感器式温度检测器来代替嵌入式温度检测器，以提高维护的便 利性。深蓝轴承箱体中没有空间接热电阻或其他线路，必须在轴承箱体外部连 接。如果适用于流体动压轴承，请在投标中添加注释。Deepblue recommends the use of probe type temperature detectors in lieu of embedded to improve ease of maintenance. There is no room in Deepblue bearing housings for termination of RTD or other wiring - it must be done external to bearing housing. Add comment in tender if hydrodynamic bearings are applicable.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "深蓝轴承箱体设计只需设置1处热电阻就可以准确监测一对滚动轴承的温度， 因此，每个轴承箱体只有1个位置用于连接轴承测温热电阻。Deepblue bearing housing designs require only 1-off bearing temperature RTD to correctly monitor a duplex pair of rolling element bearings, and therefore, there is only provision for 1-off bearing temperature RTD in each bearing housing. 注NOTE：这不是API 610的要求，但是一些客户指定要求这样的布置。This is NOT an API 610 requirement, however, some customer specifications request such arrangement.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.5.1.1": [
+    {
+      "ISO 10438和API 614在技术上被认为是等同的。深蓝将根据这些标准提供管 路和仪表。ISO 10438- 1 第 7.1.1 段中涉及的管路系统设计规范应是 ASME B31.3。ISO 10438 and API 614 are considered technically equivalent. Deepblue will supply piping and instruments in accordance with these Standards. The piping system design code as addressed in paragraph 7.1.1 of ISO 10438- 1 shall be ASME B31.3. 如第 6.4.3.4 段所述，焊接在泵体上的连接，包括角板，应满足或超过泵体的 材料和温度-压力要求，包括冲击要求，而不仅仅是满足连接管路的要求。因 此，这种连接的焊接要求应参照ASME第 VIII 章，而不是ANSI B31.3。段落 8.2.2.1——表14，注d明确指出，与泵体对焊的辅助管路做RT是不实际的。 泵体连接下游的管路将按照 ASME B31.3 的标准提供，但无损检测应限于标 书中的指定要求。As is noted in paragraph 6.4.3.4 connections, including gusseting, welded to the casing shall meet or exceed the material and pressure – temperature requirements of the casing, including impact values, rather than the requirements of the connected piping. Therefore, welding of such a connection falls under ASME Section VIII, not ANSI B31.3. Paragraph 8.2.2.1 – Table 14, note d clearly states that RT of auxiliary piping buttwelded to the pump casing is not practical. Piping downstream of case connections will be provided in accordance with ASME B31.3 except that NDE shall be limited to that specifically tendered.": "强制-澄清-Mandatory-Clarification"
+    }
+  ],
+  "7.5.1.5": [
+    {
+      "冷却水管路只有在我们的标书中注明购买后才会提供。Cooling water piping will only be supplied when noted in our tender, and purchased.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "7.5.1.7": [
+    {
+      "除非另有说明，辅助管路法兰的标准紧固件材质为低合金钢镀锌镍（如ASTM A193 B7）。Unless otherwise specified, standard fasteners for flanged auxiliary piping are zinc-nickel plated low alloy steel (e.g. ASTM A193 B7).": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "有关可选涂层及其温度限制的详细信息，请参阅E01.01。Refer to E01.01 for further details on alternative coatings and their temperature limitations.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "7.5.1.8": [
+    {
+      "这段应该解读为“螺塞应符合 6.4.3.11”。This paragraph should read \"Plugs shall comply with 6.4.3.11.\"": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "7.5.2.2": [
+    {
+      "深蓝管路组件的额定压力相当于管路连接区域的设计压力[见6.3.6]。注意，与 承压泵体连接采用奥氏体材料的法兰，承压泵体的 MAWP 因锻造的 AISI 316/316L 法兰压力等级的影响进一步受到限制。 Deepblue piping components will have a pressure rating equivalent to the design pressure of the region the piping is attached to. [See para 6.3.6] Note that when flanged pressure casing connections with Austenitic material are attached to the pressure casing, the pressure casing MAWP is further limited by the wrought dual rated AISI 316/316L flange pressure rating. 这发生在C-6泵带有316/316L奥氏体不锈钢流程管路。在这种管路系统上可 能需要使用 ANSI/ASME B16.5 CI 600 法兰，以达到所需的承压泵体的 MAWP 。This occurs on C-6 pumps with 316/316L Austenitic stainless steel process piping. It may be necessary to use ANSI/ASME B16.5 CI 600 flanges on such piping systems to achieve the desired pressure casing MAWP. 此外，当316/316L不锈钢辅助密封管路方案用于气体缓冲/隔离时，71、72、 74和75将安装在高温泵上，该辅助密封管路的温度额定值将基于辅助密封液 体或气体温度，而不是泵送介质温度。加价且必须在标书中做出解释。 Also, when 316/316L SS Secondary Seal Piping Plans for Gas Buffer/Barrier, 71, 72, 74 and 75 are to be installed on a hot pump, temperature rating of that secondary piping will be based upon secondary seal fluid or gas temperature, not pumpage temperature. Price accordingly and make comments as necessary.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.5.2.3": [
+    {
+      "由于商业可用性的原因，比A-8 (316 SS)更贵的泵材料，如D-1、D-2、317L、 20号合金或哈氏合金C等，深蓝的默认设计标准是提供符合附录H表H.5的 316L不锈钢管或316不锈钢管/配件。如果需要更优质的管路材料，则应在报 价中确定这些要求并加价。For commercial availability reasons, on pump materials more noble than A-8 (316 SS) like D-1, D-2, 317L, Alloy 20 or Hastelloy C, for example, Deepblue default standard is to supply 316L SS pipe, or 316 SS tubing/fittings, per Annex H, Table H.5. If more noble piping and/or tubing materials are required, those requirements and associated pricing adders, are to be agreed upon prior to issuance of the purchase order.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.5.2.5": [
+    {
+      "为了保证现场阀门规格的一致性，深蓝倾向于以法兰为终端，客户在现场提供 这些阀门。It is Deepblue 's preference to terminate in a flange and customer to provide these valves on site, for consistency of site valve specifications.": "强制-澄清-Mandatory-Clarification"
+    },
+    {
+      "价格包含集合式管路。 Include pricing for manifold.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.5.2.6": [
+    {
+      "除非在我们的标书中有价格和详细说明，否则不提供排液阀和排气阀。有关阀 门的说明见6.4.3.1。Drain and vent valves are not included unless priced and itemized in our proposal. See 6.4.3.1 for notes on valves.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "7.5.2.10": [
+    {
+      "所有压力表和变送器上增加截至阀和球阀都需加价。同时也要提醒供应商这个 要求，包括密封罐、LOS润滑油站系统、齿轮箱的供应商等。Add for block & bleed valves at all pressure gauges & transmitters. Alert sub-suppliers for sealpots & lube systems, gears, etc.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "7.5.3": [
+    {
+      "在标书中向客户表明所有冷却水的要求以及我们的供货范围。如果标书中有冷 却水管路的报价，联系密封供应商告知关于密封罐和换热器冷却水的要求。 Indicate in tender to customer all cooling water requirements and scope of our supply. Contact seal vendor for cooling water requirements to seal pots and coolers and quote CWP adder in tender.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.1.1": [
+    {
+      "当买方要求提供试验的书面见证通知时，请与工厂联系。这也许不可行，必须 考虑成本/交货时间的影响。Refer to factory when the purchaser requests a written notification of a preliminary test. This may not be feasible, and the cost / lead-time impact must be determined.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.1.3": [
+    {
+      "深蓝要求提前十天通知所有未事先预约检查和测试计划的客户进行访问。在提 前通知时，还需要提供访问议程，以确保深蓝有所需人员来接待和回应访问要 求。Deepblue requires ten days advanced notice for any customer visit which is not previously agreed per the Inspection & Test Plan. An agenda for the visit is also required at the time of the advance notice to ensure Deepblue has the required personnel available to receive and respond to the visit's requirements.": "强制-澄清-Mandatory-Clarification"
+    }
+  ],
+  "8.1.5": [
+    {
+      "当见证终检包含在我们的供货范围内时，以下规定适用。除了深蓝的内部质量 检验流程外，见证终检允许进行完整和彻底的检验流程，以验证货物是否符合 采购订单的要求。深蓝理解这种检查的互利性，并允许采用以下流程，以确保 双方处理的及时性When witness final inspection is included in our scope of supply, the following will apply. In addition to Deepblue's internal quality inspection process, witness final inspection allows for a complete and thorough inspection process to verify the goods are in compliance with the requirements of the purchase order. Deepblue understands the mutual benefit of this inspection and has allowed for the following process to ensure a timely process for both parties：  所有先前提交的“最终批准文件”都要在这次访问之前由买方和检查员确 认并核实。All previously submitted \"Final Approved Documentation\" is to be confirmed and verified by the Buyer and Inspector prior to this visit.  这种检查将包括对与客户连接点、标签和一般工艺的核查。这些问题将由 外形图、管路图和P&ID图来验证。This inspection will include verification of customer connection points, tagging and general workmanship. These issues will be verified by the General Arrangement, Piping, and P&ID drawings.  检查访问结束后，起草一份双方认可的书面报告。Upon completion of the inspection visit, a written report is to be drafted & mutually agreed.  在纠正商定的不符合项后，深蓝希望在深蓝通知准备就绪后的七天内得到 客户的核实和“批准发货”的通知。Upon correction of the agreed non- conformances, Deepblue would expect a customer verification and \"approval to ship\" notice within seven days of Deepblue's notification of completion.  深蓝保留通过电子邮件和/或数码照片记录和沟通小的修正的权利。 Deepblue reserves the right to document and communicate minor corrections via email and or digital photos.  只有事先确定的实质性补救措施才允许进行后续的见证检查，以核实所指 出的补救措施。Only previously identified substantial remedies allow for follow-up witness inspection to verify the noted remedy. ●8.1.5  如果客户在深蓝通知准备就绪后迟发 \"发货批准书 \"，深蓝可能为开具发 票而就地发货，并告知较长时期的存储费率。深蓝重新提交了有意见的图 纸，但在约定的时间内客户尚未返回，将不会延迟开具发票。For customer delays in issuing an \"Approval to Ship\" following Deepblue's notification of readiness, Deepblue may ship in place for invoicing purposes and advise storage rates for longer periods. Commented drawings that have been resubmitted by Deepblue, but not yet returned from the customer in the agreed upon time, will not delay invoicing. 当买方要求书面通知进行初步测试时，请咨询工厂。这也许不可行，必须确定 成本/交货时间的影响。Refer to factory when the purchaser requests a written notification of a preliminary test. This may not be feasible, and the cost / lead- time impact must be determined.": "强制-澄清-Mandatory-Clarification"
+    }
+  ],
+  "8.2.1.3": [
+    {
+      "请注意，这些额外检查应在订单阶段由买方指定，并且在客户批准的合同质量 计划中要有对应的要求。Note that such additional inspections shall be specified by the purchaser at time of order, and captured on the Order related Deepblue Quality Plan.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.2.2.1": [
+    {
+      "表14根据工况、比重、温度、MAWP百分比等规定了无损检测的等级。表14 和客户要求的无损检验需加价。Table 14 specifies NDE based upon service, sp. gr., temperature, % pump MAWP, etc. Add for NDE required by Table 14 and purchaser's specs": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "叶轮不是承压部件。由于截面较薄，叶轮上的任何磨削和焊接修复几乎都可能 超过叶轮盖板或叶片厚度的 40%，因此一些客户的技术规范将其视为重大修 复。这将造成不必要的延误，所以最好不要客户批准对叶轮的重大焊接修复。 Impellers are not pressure boundary components. Due to relatively thin sections, virtually any grinding and weld repair on an impeller may exceed 40% of the shroud or vane thickness and thus be deemed a major repair by some customer specs. That will cause undue delays, so it is best not to offer approval of major weld repairs on impellers.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.2.2.4": [
+    {
+      "允许在铸件结构限制无法 RT 检验的情况下进行 UT 检验。Allows ultrasonic testing where the configuration of a casting makes radiography examination impossible. 注意，此类额外检查应在订单阶段由买方指定，并且在客户批准的合同质量计 划中要有对应的要求。Note that such additional inspections shall be specified by the purchaser at time of order, and captured on the Order related Deepblue Quality Plan": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "8.2.2.5": [
+    {
+      "表15概述了RT、UT、PT和MT的标准。ASME第Ⅴ卷仍然是默认的标准， 它规定了MT和PT检测的规则。Table 15 includes an overview of standards for Radiography, Ultrasonic, Liquid Penetrant and Magnetic Particle inspection. ASME Section V continues to be the default standard, which governs the rules for Magnetic Particle and Liquid Penetrant Inspection. 但是，其他标准可能由卖方提出或买方规定，附件N中的焊接和材料检验数据 单可用于此目的。However alternative standards may be proposed by the vendor or specified by the purchaser. The welding and material inspection data sheet in Annex N may be used for this purpose. 买方规定的所有无损检测需加价。标书中必须确定被检验的零件和检验地点 (铸造厂或深蓝工厂)，以确定准确的成本和交货期。Add cost of all NDE specified by the purchaser. The component being inspected and where the inspection is done (foundry or Deepblue factory) must be identified before an accurate cost and lead-time impact can be tendered. 在指定RT检验时要特别注意，因为这可能需要修改模具、特殊铸件和特殊工 艺流程，以及额外的成本和交货期。在标书中包含可达区域的定义，以便客户 了解MT、PT或RT中我们可做什么，以及不能做什么。Pay special attention when radiography is specified since this may require pattern modification, special castings and special processing, as well as much additional cost and leadtime. Include definition of accessible areas in tender so customer will understand what we can MT, PT or RT, and what we cannot.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.2.2.7": [
+    {
+      "当买方强烈要求进行硬度测试时，请咨询参照工厂以验证可行性和成本。 Refer to factory when the purchaser mandates hardness testing to verify feasibility and cost.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3": [
+    {
+      "全球质量计划正在被重新审视。Global Quality plans are being revisited. 全球无损检测程序可以在内部网络中找到。Global Non-destructive inspection procedures can be found in factory. 全球标准性能试验程序可在内部网络中找到。Global Performance test procedures can be found in factory. 必须识别各个企业或项目在适用程序上的变化，并将其包含在项目特定的质量 计划中。Variations in procedures by LE or by project must be identified and included in the project specific Quality Plan. 价格中包含非见证水压试验和性能试验。NPSH、见证或其他试验需加价。 Nonwitness hydrotest and performance test are included. Add for NPSH, witnessing or other tests. 如果客户需要在其他国家见证这些测试，需加价。要在标书中注明将进行哪些 试验以及在哪个国家进行。If customer requires witnessing at other packaging location add for those tests as well. Indicate in tender, which tests will be performed and at which Deepblue location.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3.1.1": [
+    {
+      "当客户要求修改标准试验程序时，要加价。When specified add for submittal of test procedures.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3.2.2": [
+    {
+      "除非试验程序中另有说明，否则深蓝将在1.5倍MAWP的条件下对承压壳体 组件进行水压试验。Unless otherwise indicated in the test procedure Deepblue will perform the hydrostatic test of pressure casing components at 1.5 times the maximum allowable working pressure, MAWP. 深蓝不水压测试TUBE管。装配程序文件已经确保了这些配件可以通过正确的 紧固达到设计要求。Deepblue does not hydrostatically test tubing joined with compression fittings or threaded pipe. These fittings have controlled assembly procedures that ensures that the correct design tightness is achieved. 如果客户坚持水压测试螺纹管路或TUBE管，加价进行1~2 Bar气压试验，使 用肥皂水检测泄漏——如果螺纹管路或 TUBE 管可以通过封堵进行保压。If customer insists on testing threaded pipe or tubing, add for air testing at 1 to 2 Bar with soapy water leak detection test – if the threaded pipe / tubing can be plugged to achieve pressurization.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3.2.7": [
+    {
+      "如客户规定、介质比重< 0.7或温度> 260°C，增加水压试验添加表面活性剂的 成本。Add for surfactant hydrotest if required by customer, or pumpage is < 0.7 sp. gr. or > 260°C.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3.2.9": [
+    {
+      "泵的水压试验在安装机械密封前进行。Pumps will not be hydrotested with mechanical seals installed.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "8.3.3": [
+    {
+      "根据数据单和买方技术规范，延长性能试验机械运行时间、NPSH3、整机、噪 音读数、轴承箱体共振和其他试验均需加价。确保理解买方对密封腔压力、完 整的泵/驱动机组和其他特殊试验的要求并加价。注意，如果购买了整机试验， 驱动功率必须适合在介质为水的比重下进行试验——相应加价。Add for performance test extra mechanical run hours, NPSH3, Complete unit, noise readings, bearing housing resonance and other tests as noted on the datasheets and purchaser's spec. Be sure to understand and price for, purchaser requirements for seal chamber pressure, complete pump/driver and other special tests. Note that driver must be sized for water sp. gr. if complete test is purchased - price accordingly.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3.3.2": [
+    {
+      "如果合同机械密封不能在用水测试时使用，应增加试验密封的成本，并在标书 中做出备注，告知买方试验期间不使用合同密封。If job mechanical seals cannot be used on water, add cost of test seals and make comment in tender to advise purchaser that job seal will not be used during testing.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3.3.3": [
+    {
+      "API 610第11版现在需要6个测试点，将测试点拟合进多项式，以检查公差 是否在表16所示范围内。API 610 11th edition now requires 6 test points and fitting the test points into a polynomial equation to check the tolerances are within those indicated in Table 16. 额外测试点需加价和 1 小时的工时。投标时应注意，如 6.1.12 所陈述的，低 比速OH泵在额定叶轮上的流量不能超过BEP流量的120%。如果泵必须以 超过额定转速3%的速度进行测试，请在投标中提出意见。Add the extra cost of the additional test point and 1 hour of engineering time. Make comment in tender that as recognized in 6.1.12, low specific speed OH pumps may not runout to 120% of BEP flow on the rated impeller. Make comment in tender if pump has to be tested at a speed that is more than 3% away from rated speed. 关死点轴承温度和振动读数不会被记录。深蓝将提供我们的标准性能测试数据 单，该数据单将提供API 610 (ISO 13709)附件M中的示例数据单中显示的所 有信息。Bearing temperatures and vibration readings will not be taken at shutoff. Deepblue will supply our standard performance test data sheet, which will provide all the information shown on the example data sheet shown in Annex M of API 610 (ISO 13709). 8.3.3.3 e 试验数据在试验后24小时内提交可能不可行。 8.3.3.3 e Test data submittal within 24 hours of test may not be feasible.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3.3.4": [
+    {
+      "如果买方规定了效率的偏差，咨询招标工程师和售前工程师，以获得答复和增 加的成本。If purchaser specifies a tolerance on efficiency, refer to sourcing LE tendering and ADVE for response and additional cost.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3.3.6": [
+    {
+      "8.3.3.6 是圆点符号段落，要求只能按照数据单显示的 NPSHa110%进行性能 测试。在大多数情况下，当数据单上的NPSHa小于10m时，这是因为汽化压 高，而不是因为入口处于真空状态。性能试验是在接近环境温度的水中进行的。 对于低于10m的NPSHa，吸入罐将处于真空状态，以达到较低的NPSHa。 回路中少量的空气会影响扬程和效率。如果还指定了NPSH3测试，那么具有 充足NPSH的NPSH3性能点可能比性能测试曲线所显示的位置要高。深蓝认 为，实际的H-Q曲线应该用足够的NPSHa生成。如果H-Q测试是在数据单 上只有NPSHa的110%的情况下进行的，则在进行此类测试之前，必须通过 咨询工厂、售前工程师，以达成书面协议。8.3.3.6 is a bulleted paragraph that requires performance testing with only 110% of the NPSHa shown on the data sheet. In most cases, when the NPSHa on the datasheet is less than 10m it is because the vapor pressure is high, not because the suction is under vacuum. Performance tests are run on water near ambient temperature. For NPSHa less than 10m the suction tank will be under vacuum to achieve that low NPSHa. A small amount of air in the loop could affect the head and efficiency. If an NPSH3 test is also specified, the NPSH3 performance points with ample NPSH may be at a higher head than the performance test curve would indicate. Deepblue believes the realistic H-Q curve should be generated with more than ample NPSHa. If the H-Q test is to be conducted with only 110% of the NPSHa on the datasheet, written agreement by item number must be reach by sourcing factory, ADVE, and the purchaser before such test will be attempted.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3.3.7": [
+    {
+      "8.3.3.7a, 深蓝保证了性能，因此保留根据其已证明的经验和经验数据建立叶 轮直径减小的权利。计算出的直径不一定与相似定律直接相关。Deepblue guarantees the performance and thus reserves the right to establish impeller diameter reductions basis its proven experience and empirical data. The diameter calculated may not always correlate directly against the Affinity Laws. 8.3.3.7d气压测试，用于验证最终组装的密封部件和管路或螺纹管路，将按照 既定程序进行，名义上在1至1.3 Bar压力下进行测试。Pressurized Air Tests to cover the verification of final assembled sealing sections and tubing or threaded piping, will be performed in accordance with established procedures and nominally at 1 to 1.3 Bar.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3.4": [
+    {
+      "可选试验：请注意，第8.3.4.2至8.3.4.7段所述的所有测试都是可选的附加测 试，只有在报价标书中和采购订单中包含这些测试时才会执行。Optional Tests: Note that all tests described in Paragraphs 8.3.4.2 through 8.3.4.7 are optional extras, which will be performed only when included in the proposal and purchase order.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "8.3.4.2.1": [
+    {
+      "如果买方指定油温稳定试验，则应在询价书中说明，并在标书中说明所有影响。 深蓝温度稳定标准是每5分钟3次温度读数在0.6℃范围内的。If the purchaser specifies oil temperature stabilization testing, this should be stated in the inquiry and any implications addressed in the proposal. Deepblue's criteria for temperature stabilization = 3 temperature readings within 0.6℃ in 5 minute intervals.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3.4.3": [
+    {
+      "NPSH试验的定价基于NPSH确认试验。当购买NPSHR试验时，将进行试 验以证明和确认 NPSHR 满足销售/报价曲线和额定值。当规定 NPSHR 试验 以确定实际的扬程降3%时，这种试验要求根据水力协会(ANSI / HI 1.6-2000) 开发并提交“膝盖形”NPSHR曲线。NPSH test pricing is based on an NPSH confirmation test. When NPSHR testing is purchased, the test will be performed to demonstrate and confirm, that the NPSHR meets the sales/proposal curve and rated value. When a breakdown NPSHR test is specified to determine the actual NPSHR at 3% head drop, such testing requires NPSHR curve \"knees\" to be developed and submitted in accordance with the Hydraulic Institute (ANSI / HI 1.6-2000). 联系工厂确定价格(增加10小时测试时间)。投标过程中与客户协商。Contact factory for pricing (Add 10 test hours). Discuss this with customer during tender. 当没有为建立“膝盖”曲线的试验加价时，在报价中提供以下澄清。 Provide the following clarification in the tender when extra cost is not added for testing that establishes the \"knee\" curves. “本试验遵循美国水力协会(ANSI / HI 1.6-2000)标准，但实际不提供NPSHR 达到 3%的扬程降差和 NPSHR (“膝盖形”)曲线。” \"This test follows the procedures of Hydraulic Institute (ANSI / HI 1.6-2000), however the actual NPSHR to achieve 3% head drop and NPSHR curves (\"knees\") will not be provided.\"": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "当NPSH3=1.5m或更小时投标增加以下澄清：NPSH3测试期间达到1.5m汽 蚀余量，吸入罐的压力必须降低约87%大气压力，约0.13BarA。储罐内的低 压导致储罐内液位出现大量气泡。鼓泡液体可以被吸入入口管和泵内。 NPSH3%是由泵在给定流量下产生的扬程决定的，在有足够入口压的情况下， 扬程下降3%。随着气泡的出现，小型泵上的一级扬程振荡很大，很难确定(或 重复)给定流量 3%的扬程降差。出于这个原因，NPSH3=1.5m 的值是“理想 的，没有保证的”。一个可行的解决方案是以更高的转速来测试，换算到额定 转速的性能和 NPSH3。当发生这种情况时，建议在订单开公会上协商。Add the following clarification to the tender when NPSH3 tendered is 1.5m or less: “To achieve 1.5m NPSH during an NPSH3 test, the suction tank pressure must be reduced about 87% below atmospheric pressure to about 0.13 BarA. That low pressure in the tank causes substantial bubbling at the liquid level in the tank. Bubbling liquid can be drawn into the suction pipe and into the pump. NPSH3% is determined when the head generated by the pump at a given flow, drops by 3% below the head generated with ample suction pressure. With the bubbles present, the 1 stage head on small pumps is oscillating enough that it is difficult to determine (or repeat) the 3% head deviation at a given flow. For that reason, NPSH3 values of 1.5m are “expected, not guaranteed.” A possible workaround would be to test at a higher speed and step the performance and NPSH3 to the rated speed. Discussion at order kickoff is recommended when this occurs.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "如有规定，应增加耐磨涂层。采取以下行动，并在本段的投标意见中增加以下 说明：<<如果叶轮指定了耐磨涂层，NPSH3试验应在涂层之前完成，这样可 以任意进行调整以达到成功的NPSH3试验。涂层叶轮的NPSH3试验必须事 先得到售前工程师和测试部门的批准，并按 2 次性能和 NPSH 试验定价，因 为 3%的偏差必须在涂层后重新建立。 When specified, add for abrasive resistant coatings. Take the following action and add the following clarification to tender comments under this paragraph: << If abrasive coating is specified for the impeller, NPSH3 testing, shall be accomplished prior to coating, so that any adjustments can be made to achieve a successful NPSH3 test. NPSH3 testing with coated impellers must have prior approval of ADVE and test department and priced as 2 performance and NPSH tests since 3% deviation must be reestablished after coating. >>": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3.4.3.1": [
+    {
+      "除了关死点每个测试点都需要 NPSH。NPSH required at each test point except shut off. 性能和NPSH试验应采用ISO 9906一级、ANSI/HI 1.6（离心泵）或ANSI/HI 2.6（立式泵）的方法和不确定要求进行。Performance and NPSH tests shall be conducted using the methods and uncertainty requirements of ISO 9906 grade 1, ANSI/HI 1.6 (for centrifugal pumps) or ANSI/HI 2.6 (for vertical pumps). 性能公差应符合表16要求，结果的评价应按照8.3.3.3 b进行。Performance tolerances shall be in accordance with Table 16. Evaluation of results shall be in accordance with 8.3.3.3 b.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3.4.4": [
+    {
+      "需要进行整机测试时，增加非灌浆底座成本（泵、驱动机、和合同底座） Add for non-grouted baseplate on pumps that are to be given a complete test (pump-driver-job baseplate)": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "如果需要进行完整的机组测试，（除非事先另有约定），电机供应商必须在电机 运往深蓝之前，进行“完整测试”。电动机的功率必须保证在水试验时不会过 载。If a complete unit test is required, (unless otherwise previously agreed upon), the motor must have a \"complete test\" accomplished by the motor supplier prior to shipping to Deepblue. Motor must be sized to be non- overloading on water. 当引用泵的效率时，修正高的入口压力和双端面机械密封的损失。净效率是电 机效率×泵效率。非标准测试装置要求-咨询工厂获知增加的成本。 Correct for high suction pressure and dual mechanical seal losses when quoting efficiency on pump. Net efficiency is motor efficiency × pump efficiency. Non- standard test set up required - Refer to factory for extra cost.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3.4.5": [
+    {
+      "深蓝测试设备不是声音测试设备，因此任何声音读数仅供参考，不能保证准确 性。Deepblue test facilities are not sound test facilities and thus any sound readings taken are for information only and are not guaranteed.": "非强制-报价参考-Tutorial-Info"
+    }
+  ],
+  "8.3.4.6": [
+    {
+      "深蓝可以选择由制造商或分包商进行辅助设备测试。Deepblue may choose to have auxiliary equipment testing performed by the manufacturer or sub vendor.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.3.4.7": [
+    {
+      "如客户指定，可加价进行轴承箱体共振试验。试验台上的轴承箱体共振试验结 果可能与现场的固有频率不同，因此数据仅供参考。If specified by customer, add cost of bearing housing resonance test. Bearing housing resonance testing on the test stand may vary from natural frequencies in the field, therefore data will be for information only.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "8.4.3": [
+    {
+      "增加与买方不锈钢标签接口的成本，以及在外形图上的相同标注。标签将由不 锈钢线固定在正确的位置。Add cost of tagging purchaser's connections with SS tag, and cost of denoting same on GA DWG. Tags will be SS held in place by SS wire.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "9.2.1.4": [
+    {
+      "如果必须提交泵体连接处细节以供批准，则需加价并延长供货期。[增加 4 小 时工时以及一个星期的供货期]。Add extra cost and lead-time if case connection details must be submitted for approval. [Add 4 Engineering. hrs. & one week lead-time].": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "9.2.4.2.5": [
+    {
+      "当泵的转子作为一个组件进行平衡时（通常是3级或3级以上的泵），深蓝已 经不再提供API 610附件J的残余不平衡量以确定平衡机的精度的检查。我们 发现，使用我们工厂里的现代校准平衡机是一种不必要的时间浪费。任何可测 量的不平衡问题最终都会在测试中显示出来。When the pump rotor is balanced as an assembly (typically pumps with 3 or more stages) Deepblue has stopped doing API 610 Annex J residual unbalance checks to determine balance machine accuracy. We have found it to be an unnecessary waste of time with the modern calibrated balance machines that we have in our factories. Any measurable unbalance issues will ultimately show up on test.": "强制-澄清-Mandatory-Clarification"
+    }
+  ],
+  "9.2.5.1.4": [
+    {
+      "深蓝认为AISI 4140材质的轴不受此要求影响。铬含量仅略高于1%的水平， 而且根据我们的经验，这种轴材质没有因“线切割”对轴承造成过损害。 Deepblue considers AISI 4140 pump shafts exempt from this requirement. The chrome content is only marginally above the 1% level and this shaft material has not, in our experience, experienced damage to the bearing from \"wire wooling\".": "强制-澄清-Mandatory-Clarification"
+    },
+    {
+      "在轴颈表面速度超过40 m/s 之前，深蓝不会对12%铬或17-4PH材质的轴的 轴颈区域进行镀铬、硬涂层或安装轴套。根据深蓝的经验，在较低的表面速度 下，不会出现“线切割”对轴承的损害。 Deepblue does not chrome plate, hard coat or sleeve the journal areas of 12% Chrome or 17-4 PH shafts until the journal surface speed exceeds 40 m/s. It is Deepblue's experience that damage to the bearing from \"wire wooling will not occur at lower surface velocities.": "强制-澄清-Mandatory-Clarification"
+    },
+    {
+      "注 NOTE：只有在轴材料适用且轴颈速度超过 API610 限制的 20m/s 时，才 执行 9.2.5.1.4 的强制注释。:Only include these 9.2.5.1.4 Mandatory comments if shaft material is applicable and journal speed exceeds API610 limit of 20m/s.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "9.2.5.2.4": [
+    {
+      "如果买方要求推力轴承尺寸的审查和批准，则需增加 4 小时的工时费。 Add extra cost for 4 hours engineering if purchaser specifies thrust bearing sizing review and approval.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "9.2.6.1": [
+    {
+      "如果提供润滑油系统，请参阅所附的润滑油系统报价附件，以获取分供应商对 ISO 13709 和 ISO 10438 的意见和澄清。 If lube system is included, see attached lube system quote for sub-supplier comments and clarifications to ISO 13709 and ISO 10438.": "非强制-报价行动-Tutorial-Action"
+    },
+    {
+      "如果润滑油系统包含在我们的投标中，润滑油系统将在分供应商的工厂进行测 试。深蓝的车间将在泵的性能测试中使用润滑油系统，除非我们的标书中另有 说明。If lube system is included in our tender, lube system will be tested at sub- supplier's facility. Deepblue's shop lube system will be used during pump performance test, unless otherwise stated in our tender.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "9.2.6.2": [
+    {
+      "如果需要外部压力润滑系统，那么我们的分包商必须按照ISO 10438-3，图B.8 和表B.1进行报价。他们需要确认他们符合所有的要求；或者提供详细的注解 /澄清/偏差，以便纳入我们的投标。If an external pressure-lubrication system is required then our sub-vendor must quote in accordance with ISO 10438-3, Figure B.8 and Table B.1.They need to confirm they meet all the requirements; or provide detailed comments / clarifications / exceptions for inclusion into our bid.": "非强制-报价行动-Tutorial-Action"
+    }
+  ],
+  "9.2.6.4": [
+    {
+      "如果这一段被指定，我们的分包商必须按照ISO 10438-2进行报价。他们需要 确认他们符合所有的要求；或者提供详细的注解/澄清/偏差情况，以便纳入我 们的投标。If this paragraph is specified our sub-vendor must quote in accordance with ISO 10438-2. They need to confirm they meet all the requirements; or provide detailed comments / clarifications / exceptions for inclusion into our bid.": "非强制-报价行动-Tutorial-Action"
+    }
+  ]
+}

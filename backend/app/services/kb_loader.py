@@ -1,0 +1,81 @@
+from __future__ import annotations
+
+import json
+import re
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Literal, cast
+
+
+TYPE_PATTERN = re.compile(r"\b([PABC])\b", re.IGNORECASE)
+
+
+@dataclass(frozen=True)
+class KnowledgeEntry:
+    entry_id: str
+    category: str
+    text: str
+    type_code: Literal["P", "A", "B", "C", "OTHER"]
+    raw_value: str
+
+
+@dataclass
+class KnowledgeBase:
+    entries: list[KnowledgeEntry]
+    _by_category: dict[str, list[KnowledgeEntry]] = field(default_factory=dict)
+
+    def __post_init__(self) -> None:
+        if self._by_category:
+            return
+        grouped: dict[str, list[KnowledgeEntry]] = {}
+        for entry in self.entries:
+            grouped.setdefault(entry.category, []).append(entry)
+        self._by_category = grouped
+
+    @property
+    def categories(self) -> list[str]:
+        return list(self._by_category.keys())
+
+    def by_category(self, category: str) -> list[KnowledgeEntry]:
+        return self._by_category.get(category, [])
+
+    def find_entry(self, entry_id: str) -> KnowledgeEntry | None:
+        for entry in self.entries:
+            if entry.entry_id == entry_id:
+                return entry
+        return None
+
+
+def infer_type_code(raw_value: str) -> Literal["P", "A", "B", "C", "OTHER"]:
+    if not raw_value:
+        return "OTHER"
+    match = TYPE_PATTERN.search(raw_value.strip())
+    if not match:
+        return "OTHER"
+    code = match.group(1).upper()
+    if code in {"P", "A", "B", "C"}:
+        return cast(Literal["P", "A", "B", "C", "OTHER"], code)
+    return "OTHER"
+
+
+def load_knowledge_base(path: Path) -> KnowledgeBase:
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    entries: list[KnowledgeEntry] = []
+    for category, row_list in payload.items():
+        if not isinstance(row_list, list):
+            continue
+        for index, row in enumerate(row_list, start=1):
+            if not isinstance(row, dict) or not row:
+                continue
+            text, raw_value = next(iter(row.items()))
+            entry_id = f"{category}-{index}"
+            entries.append(
+                KnowledgeEntry(
+                    entry_id=entry_id,
+                    category=str(category),
+                    text=str(text),
+                    type_code=infer_type_code(str(raw_value)),
+                    raw_value=str(raw_value),
+                )
+            )
+    return KnowledgeBase(entries=entries)
