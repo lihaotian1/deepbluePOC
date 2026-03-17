@@ -7,8 +7,9 @@ import type {
   KnowledgeBaseFileSummary,
   UploadResponse,
 } from "../types";
+import { buildAssetUrl, normalizeApiBase, resolveServerBase } from "./url";
 
-const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api/v1";
+const apiBase = normalizeApiBase(import.meta.env.VITE_API_BASE_URL);
 
 export const http = axios.create({
   baseURL: apiBase,
@@ -77,9 +78,9 @@ export function getApiBase() {
 }
 
 export function getServerBase() {
-  return apiBase.replace(/\/api\/v1$/, "");
+  return resolveServerBase(apiBase);
 }
 
 export function getAssetUrl(path: string) {
-  return `${getServerBase()}${path}`;
+  return buildAssetUrl(apiBase, path);
 }
