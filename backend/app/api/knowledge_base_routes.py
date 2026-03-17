@@ -5,12 +5,11 @@ from pathlib import Path
 
 from fastapi import APIRouter, Depends, HTTPException, Response
 
-from app.api.deps import get_knowledge_base_manager, get_matcher_service, get_settings
+from app.api.deps import get_knowledge_base_manager, get_settings
 from app.config import Settings
 from app.schemas import KnowledgeBaseCreateRequest, KnowledgeBaseDocument, KnowledgeBaseFileSummary
-from app.services.kb_loader import load_knowledge_base
+from app.services.compare_profiles import COMPARE_PROFILES
 from app.services.knowledge_base_manager import KnowledgeBaseManager
-from app.services.matcher_service import MatcherService
 
 
 router = APIRouter(prefix="/knowledge-bases", tags=["knowledge-bases"])
@@ -20,6 +19,10 @@ def _is_active_compare_file(candidate_path: Path, settings: Settings) -> bool:
     return os.path.normcase(str(candidate_path.resolve(strict=False))) == os.path.normcase(
         str(settings.kb_file.resolve(strict=False))
     )
+
+
+def _is_required_compare_profile(file_name: str) -> bool:
+    return file_name in COMPARE_PROFILES
 
 
 @router.get("", response_model=list[KnowledgeBaseFileSummary])
@@ -47,18 +50,13 @@ async def save_knowledge_base_file(
     file_name: str,
     document: KnowledgeBaseDocument,
     manager: KnowledgeBaseManager = Depends(get_knowledge_base_manager),
-    matcher: MatcherService = Depends(get_matcher_service),
-    settings: Settings = Depends(get_settings),
 ) -> KnowledgeBaseDocument:
     try:
-        saved_path = manager.save_file(file_name, document)
+        manager.save_file(file_name, document)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail="Knowledge base file not found") from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
-
-    if _is_active_compare_file(saved_path, settings):
-        matcher.kb = load_knowledge_base(saved_path)
 
     return manager.read_file(file_name)
 
@@ -84,7 +82,7 @@ async def delete_knowledge_base_file(
     manager: KnowledgeBaseManager = Depends(get_knowledge_base_manager),
     settings: Settings = Depends(get_settings),
 ) -> Response:
-    if _is_active_compare_file(manager.kb_dir / file_name, settings):
+    if _is_active_compare_file(manager.kb_dir / file_name, settings) or _is_required_compare_profile(file_name):
         raise HTTPException(status_code=409, detail="Cannot delete active compare knowledge base file")
 
     try:

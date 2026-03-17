@@ -360,6 +360,13 @@ body {
   border-color: rgba(255, 109, 122, 0.35);
 }
 
+.filter-panel__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
 .filter-panel__head h3 {
   margin: 0;
   font-size: 18px;
@@ -402,6 +409,49 @@ body {
   align-items: center;
   gap: 12px;
   margin-top: 16px;
+}
+
+.compare-panel__selector-group {
+  margin-top: 16px;
+}
+
+.compare-panel__selector-label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.compare-panel__selector-list,
+.filter-panel__views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.compare-panel__selector {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.compare-panel__selector input {
+  margin: 0;
+}
+
+.compare-panel__selector.is-selected {
+  border-color: rgba(74, 214, 184, 0.7);
+  background: rgba(74, 214, 184, 0.12);
+}
+
+.compare-panel__selector.is-locked {
+  cursor: default;
 }
 
 .file-picker {
@@ -845,6 +895,12 @@ body {
   border-color: rgba(189, 196, 214, 0.45);
 }
 
+.result-tag--named {
+  background: rgba(255, 212, 111, 0.14);
+  color: #ffe7b8;
+  border-color: rgba(255, 212, 111, 0.38);
+}
+
 @keyframes pulse {
   0% {
     box-shadow: 0 0 0 0 rgba(74, 214, 184, 0.45);
@@ -882,6 +938,16 @@ body {
     border-right: 0;
     border-bottom: 1px solid var(--line);
     overflow: hidden;
+  }
+
+  .filter-panel__head {
+    display: grid;
+    gap: 12px;
+  }
+
+  .compare-panel__selector-list,
+  .filter-panel__views {
+    gap: 8px;
   }
 
   .sidebar-nav {

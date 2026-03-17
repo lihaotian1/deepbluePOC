@@ -77,6 +77,9 @@ class KnowledgeBaseManager:
         file_path = self._resolve_existing_file(file_name)
         file_path.unlink(missing_ok=False)
 
+    def resolve_file(self, file_name: str) -> Path:
+        return self._resolve_existing_file(file_name)
+
     def _resolve_existing_file(self, file_name: str) -> Path:
         file_path = (self.kb_dir / file_name).resolve()
         kb_root = self.kb_dir.resolve()

@@ -61,7 +61,7 @@ function App() {
       onSelectKnowledgeBase={handleSelectKnowledgeBase}
     >
       <div className={`page-view ${currentPage === "home" ? "" : "is-hidden"}`} aria-hidden={currentPage !== "home"}>
-        <HomePage />
+        <HomePage compareKnowledgeBases={kbFiles} />
       </div>
       {hasVisitedKnowledgeBase ? (
         <div

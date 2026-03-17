@@ -7,10 +7,8 @@ from app.api.document_routes import router as document_router
 from app.api.export_routes import router as export_router
 from app.api.knowledge_base_routes import router as knowledge_base_router
 from app.config import Settings
-from app.services.kb_loader import load_knowledge_base
 from app.services.knowledge_base_manager import KnowledgeBaseManager
 from app.services.llm_client import OpenAICompatibleMatcherLLM
-from app.services.matcher_service import MatcherService
 from app.services.session_store import SessionStore
 from app.services.splitter_service import SplitterService
 
@@ -38,14 +36,12 @@ def create_app() -> FastAPI:
     )
     app.state.knowledge_base_manager = KnowledgeBaseManager(settings.kb_directory)
 
-    kb = load_knowledge_base(settings.kb_file)
-    llm = OpenAICompatibleMatcherLLM(
+    app.state.matcher_llm = OpenAICompatibleMatcherLLM(
         base_url=settings.openai_base_url,
         api_key=settings.openai_api_key,
         model=settings.openai_model,
         timeout=settings.openai_timeout,
     )
-    app.state.matcher_service = MatcherService(kb=kb, llm=llm)
 
     @app.get("/health")
     def health_check() -> dict[str, str]:

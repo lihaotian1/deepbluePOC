@@ -1,60 +1,66 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { exportExcel, patchChunks, uploadDocument } from "../api/client";
 import { streamCompare } from "../api/sse";
 import ChunkCard from "../components/ChunkCard";
 import ComparePanel from "../components/ComparePanel";
 import UploadPanel from "../components/UploadPanel";
-import { invalidateCompareStateAfterChunkEdit } from "./homePageCompareState";
-import type { Chunk, ChunkCompareResult, ResultFilterType, TypeCode } from "../types";
+import {
+  DEFAULT_COMPARE_KB_FILES,
+  STANDARD_KB_FILE_NAME,
+  buildFilterModelForKnowledgeBase,
+  collectTypeCodes,
+  invalidateCompareStateAfterChunkEdit,
+  toggleKnowledgeBaseSelection,
+} from "./homePageCompareState";
+import type {
+  Chunk,
+  ChunkCompareResult,
+  KnowledgeBaseFileSummary,
+  ResultFilterType,
+} from "../types";
 
+interface HomePageProps {
+  compareKnowledgeBases: KnowledgeBaseFileSummary[];
+}
 
-const FILTER_ORDER: ResultFilterType[] = ["ALL", "P", "A", "B", "C", "OTHER"];
-const FILTER_LABELS: Record<ResultFilterType, string> = {
-  ALL: "ALL",
-  P: "P",
-  A: "A",
-  B: "B",
-  C: "C",
-  OTHER: "其他",
-};
-
-function HomePage() {
+function HomePage({ compareKnowledgeBases }: HomePageProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [comparing, setComparing] = useState(false);
   const [docId, setDocId] = useState("");
   const [chunks, setChunks] = useState<Chunk[]>([]);
-  const [resultMap, setResultMap] = useState<Record<number, ChunkCompareResult>>({});
+  const [resultsByKb, setResultsByKb] = useState<Record<string, Record<number, ChunkCompareResult>>>({});
+  const [selectedCompareKbFiles, setSelectedCompareKbFiles] = useState<string[]>([STANDARD_KB_FILE_NAME]);
+  const [activeResultKbFile, setActiveResultKbFile] = useState(STANDARD_KB_FILE_NAME);
   const [logs, setLogs] = useState<string[]>([]);
   const [progressText, setProgressText] = useState("等待上传文件");
   const [activeFilter, setActiveFilter] = useState<ResultFilterType>("ALL");
   const [hasPendingChunkSync, setHasPendingChunkSync] = useState(false);
 
-  const sortedChunks = useMemo(() => [...chunks].sort((a, b) => a.chunk_id - b.chunk_id), [chunks]);
+  const compareOptions = useMemo(() => {
+    return DEFAULT_COMPARE_KB_FILES.map((fileName) => {
+      return compareKnowledgeBases.find((item) => item.file_name === fileName) ?? {
+        file_name: fileName,
+        display_name: fileName.replace(/\.json$/, ""),
+      };
+    });
+  }, [compareKnowledgeBases]);
 
-  const filterCounts = useMemo(() => {
-    const counter: Record<ResultFilterType, number> = {
-      ALL: sortedChunks.length,
-      P: 0,
-      A: 0,
-      B: 0,
-      C: 0,
-      OTHER: 0,
-    };
-
-    for (const chunk of sortedChunks) {
-      const result = resultMap[chunk.chunk_id];
-      if (!result) {
-        continue;
-      }
-      const hitTypes = collectTypeCodes(result);
-      for (const typeCode of hitTypes) {
-        counter[typeCode] += 1;
-      }
+  useEffect(() => {
+    if (selectedCompareKbFiles.includes(activeResultKbFile)) {
+      return;
     }
-    return counter;
-  }, [resultMap, sortedChunks]);
+
+    setActiveResultKbFile(selectedCompareKbFiles[0] ?? STANDARD_KB_FILE_NAME);
+  }, [activeResultKbFile, selectedCompareKbFiles]);
+
+  const sortedChunks = useMemo(() => [...chunks].sort((a, b) => a.chunk_id - b.chunk_id), [chunks]);
+  const activeResultMap = resultsByKb[activeResultKbFile] ?? {};
+  const filterModel = useMemo(
+    () => buildFilterModelForKnowledgeBase(activeResultKbFile, activeResultMap, sortedChunks.length),
+    [activeResultKbFile, activeResultMap, sortedChunks.length],
+  );
 
   const filteredChunks = useMemo(() => {
     if (activeFilter === "ALL") {
@@ -62,16 +68,32 @@ function HomePage() {
     }
 
     return sortedChunks.filter((chunk) => {
-      const result = resultMap[chunk.chunk_id];
+      const result = activeResultMap[chunk.chunk_id];
       if (!result) {
         return false;
       }
-      return collectTypeCodes(result).includes(activeFilter as TypeCode);
+
+      return collectTypeCodes(result).includes(activeFilter);
     });
-  }, [activeFilter, resultMap, sortedChunks]);
+  }, [activeFilter, activeResultMap, sortedChunks]);
 
   function appendLog(line: string) {
     setLogs((prev) => [...prev, line]);
+  }
+
+  function resolveKnowledgeBaseDisplayName(fileName: string) {
+    return compareOptions.find((item) => item.file_name === fileName)?.display_name ?? fileName.replace(/\.json$/, "");
+  }
+
+  function handleToggleKnowledgeBase(fileName: string) {
+    setSelectedCompareKbFiles((current) =>
+      toggleKnowledgeBaseSelection(
+        current,
+        fileName,
+        compareOptions.map((item) => item.file_name),
+        comparing,
+      ),
+    );
   }
 
   async function handleUpload() {
@@ -81,13 +103,14 @@ function HomePage() {
     setUploading(true);
     setProgressText("正在切分文档...");
     setLogs([]);
-    setResultMap({});
+    setResultsByKb({});
     try {
       const response = await uploadDocument(selectedFile);
       setDocId(response.doc_id);
       setChunks(response.chunks);
       setHasPendingChunkSync(false);
       setActiveFilter("ALL");
+      setActiveResultKbFile(selectedCompareKbFiles[0] ?? STANDARD_KB_FILE_NAME);
       setProgressText(`切分完成，共 ${response.chunks.length} 段`);
       appendLog(`上传完成: ${response.source_file_name}`);
     } catch (error) {
@@ -102,9 +125,9 @@ function HomePage() {
     setChunks((prev) => prev.map((chunk) => (chunk.chunk_id === chunkId ? { ...chunk, content: value } : chunk)));
     setHasPendingChunkSync(true);
 
-    const nextCompareState = invalidateCompareStateAfterChunkEdit({ resultMap, activeFilter });
-    if (nextCompareState.resultMap !== resultMap) {
-      setResultMap(nextCompareState.resultMap);
+    const nextCompareState = invalidateCompareStateAfterChunkEdit({ resultsByKb, activeFilter });
+    if (nextCompareState.resultsByKb !== resultsByKb) {
+      setResultsByKb(nextCompareState.resultsByKb);
     }
     if (nextCompareState.activeFilter !== activeFilter) {
       setActiveFilter(nextCompareState.activeFilter);
@@ -114,11 +137,12 @@ function HomePage() {
   }
 
   async function handleCompare() {
-    if (!docId || chunks.length === 0) {
+    if (!docId || chunks.length === 0 || selectedCompareKbFiles.length === 0) {
       return;
     }
     setComparing(true);
-    setResultMap({});
+    setResultsByKb({});
+    setActiveResultKbFile(selectedCompareKbFiles[0] ?? STANDARD_KB_FILE_NAME);
     setActiveFilter("ALL");
     setLogs([]);
     setProgressText("正在提交编辑内容...");
@@ -129,25 +153,35 @@ function HomePage() {
       appendLog("编辑内容已保存，开始流式比对...");
       await streamCompare(
         docId,
+        selectedCompareKbFiles,
         (eventName, payload) => {
           const eventPayload = (payload || {}) as Record<string, unknown>;
+          const kbFile = String(eventPayload.kb_file || "");
+          const kbDisplayName = String(eventPayload.kb_display_name || resolveKnowledgeBaseDisplayName(kbFile));
+          const logPrefix = kbDisplayName ? `[${kbDisplayName}] ` : "";
 
           if (eventName === "chunk_start") {
             const index = Number(eventPayload.index || 0);
             const total = Number(eventPayload.total || 0);
             const heading = String(eventPayload.heading || "");
-            setProgressText(`比对进行中: ${index}/${total}`);
-            appendLog(`开始处理第 ${index}/${total} 段: ${heading}`);
+            setProgressText(`${kbDisplayName} 比对进行中: ${index}/${total}`);
+            appendLog(`${logPrefix}开始处理第 ${index}/${total} 段: ${heading}`);
             return;
           }
 
           if (eventName === "chunk_result") {
             const result = eventPayload.result as ChunkCompareResult;
-            if (!result || typeof result.chunk_id !== "number") {
+            if (!result || typeof result.chunk_id !== "number" || !kbFile) {
               return;
             }
-            setResultMap((prev) => ({ ...prev, [result.chunk_id]: result }));
-            appendLog(`第 ${result.chunk_id} 段处理完成 (${result.label})`);
+            setResultsByKb((prev) => ({
+              ...prev,
+              [kbFile]: {
+                ...(prev[kbFile] ?? {}),
+                [result.chunk_id]: result,
+              },
+            }));
+            appendLog(`${logPrefix}第 ${result.chunk_id} 段处理完成 (${result.label})`);
             return;
           }
 
@@ -156,32 +190,30 @@ function HomePage() {
             const categories = Array.isArray(eventPayload.categories)
               ? (eventPayload.categories as string[])
               : [];
-            appendLog(`第 ${chunkId} 段分类: ${categories.length ? categories.join(" / ") : "其他"}`);
+            appendLog(`${logPrefix}第 ${chunkId} 段分类: ${categories.length ? categories.join(" / ") : "其他"}`);
             return;
           }
 
           if (eventName === "category_match") {
             const category = String(eventPayload.category || "未知分类");
             const hitCount = Number(eventPayload.hit_count || 0);
-            appendLog(`分类 ${category} 命中 ${hitCount} 条`);
+            appendLog(`${logPrefix}分类 ${category} 命中 ${hitCount} 条`);
             return;
           }
 
           if (eventName === "error") {
-            appendLog(`处理异常: ${String(eventPayload.message || "未知错误")}`);
+            appendLog(`${logPrefix}处理异常: ${String(eventPayload.message || "未知错误")}`);
             return;
           }
 
           if (eventName === "compare_done") {
-            const done = Number(eventPayload.done || 0);
-            const total = Number(eventPayload.total || 0);
-            setProgressText(`比对完成: ${done}/${total}`);
+            setProgressText(`比对完成，共处理 ${selectedCompareKbFiles.length} 个知识库`);
             appendLog("全部章节比对完成");
           }
         },
         (message) => {
           appendLog(message);
-        }
+        },
       );
     } catch (error) {
       setProgressText("比对失败，请稍后重试");
@@ -242,23 +274,48 @@ function HomePage() {
         comparing={comparing}
         progressText={progressText}
         logs={logs}
+        knowledgeBaseOptions={compareOptions}
+        selectedKnowledgeBaseFiles={selectedCompareKbFiles}
+        onToggleKnowledgeBase={handleToggleKnowledgeBase}
         onCompare={handleCompare}
         onExport={handleExport}
       />
 
       <section className="glass-card filter-panel">
         <div className="filter-panel__head">
-          <h3>类型筛选</h3>
+          <div>
+            <h3>类型筛选</h3>
+            {selectedCompareKbFiles.length > 1 ? <p>当前展示 {resolveKnowledgeBaseDisplayName(activeResultKbFile)} 的比对结果</p> : null}
+          </div>
+
+          {selectedCompareKbFiles.length > 1 ? (
+            <div className="filter-panel__views">
+              {selectedCompareKbFiles.map((fileName) => (
+                <button
+                  key={fileName}
+                  type="button"
+                  className={`btn btn-lite filter-btn ${activeResultKbFile === fileName ? "is-active" : ""}`}
+                  onClick={() => {
+                    setActiveResultKbFile(fileName);
+                    setActiveFilter("ALL");
+                  }}
+                >
+                  {resolveKnowledgeBaseDisplayName(fileName)}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
+
         <div className="filter-panel__buttons">
-          {FILTER_ORDER.map((filterKey) => (
+          {filterModel.order.map((filterKey) => (
             <button
               key={filterKey}
               type="button"
               className={`btn btn-lite filter-btn ${activeFilter === filterKey ? "is-active" : ""}`}
               onClick={() => setActiveFilter(filterKey)}
             >
-              {FILTER_LABELS[filterKey]}({filterCounts[filterKey]})
+              {filterModel.labels[filterKey]}({filterModel.counts[filterKey] ?? 0})
             </button>
           ))}
         </div>
@@ -266,19 +323,11 @@ function HomePage() {
 
       <section className="chunks-grid">
         {filteredChunks.map((chunk) => (
-          <ChunkCard key={chunk.chunk_id} chunk={chunk} result={resultMap[chunk.chunk_id]} onChange={handleChunkChange} />
+          <ChunkCard key={chunk.chunk_id} chunk={chunk} result={activeResultMap[chunk.chunk_id]} onChange={handleChunkChange} />
         ))}
       </section>
     </section>
   );
-}
-
-
-function collectTypeCodes(result: ChunkCompareResult): TypeCode[] {
-  if (result.label === "其他" || result.matches.length === 0) {
-    return ["OTHER"];
-  }
-  return Array.from(new Set(result.matches.map((item) => item.type_code)));
 }
 
 export default HomePage;

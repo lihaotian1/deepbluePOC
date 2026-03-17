@@ -6,7 +6,7 @@ import pytest
 
 from app.schemas import Chunk
 from app.services import llm_client as llm_client_module
-from app.services.kb_loader import KnowledgeBase, KnowledgeEntry
+from app.services.kb_loader import KnowledgeBase, KnowledgeEntry, load_tender_instruction_knowledge_base
 from app.services.llm_client import OpenAICompatibleMatcherLLM
 from app.services.matcher_service import MatcherService, _split_sentences
 from app.services.prompt_builder import build_batch_item_messages
@@ -446,6 +446,36 @@ def test_matcher_batches_multiple_chunks_for_higher_efficiency() -> None:
     assert len(output) == 2
     assert llm.classify_batch_calls == 1
     assert llm.match_batch_calls == 2
+
+
+def test_matcher_uses_tender_instruction_display_labels_instead_of_top_level_keys(tmp_path) -> None:
+    kb_path = tmp_path / "投标说明知识库.json"
+    kb_path.write_text(
+        json.dumps(
+            {
+                "3.2": [
+                    {"Clarify the tender action.": "非强制-报价行动-Tutorial-Action"},
+                ]
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+    kb = load_tender_instruction_knowledge_base(kb_path)
+    llm = FakeLLM(
+        categories_by_chunk={11: ["非强制-报价行动", "3.2"]},
+        hits_by_chunk_and_category={
+            (11, "非强制-报价行动"): [{"entry_id": kb.entries[0].entry_id, "reason": "语义一致"}],
+        },
+    )
+    matcher = MatcherService(kb=kb, llm=llm)
+    chunk = Chunk(chunk_id=11, source="demo.pdf", heading="11", level=1, line_no=11, content="Clarify the tender action.")
+
+    result = asyncio.run(matcher.compare_chunk(chunk))
+
+    assert result.categories == ["非强制-报价行动"]
+    assert result.matches[0].category == "非强制-报价行动"
+    assert result.matches[0].type_code == "非强制-报价行动"
 
 
 def test_batch_item_prompt_includes_sentences_and_indexed_evidence_fields() -> None:

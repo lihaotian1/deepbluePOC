@@ -22,6 +22,10 @@ def _load_first_sheet_rows(blob: bytes) -> list[tuple[object, ...]]:
     return list(sheet.iter_rows(values_only=True))
 
 
+def _load_workbook(blob: bytes):
+    return load_workbook(BytesIO(blob))
+
+
 def test_export_workbook_writes_expected_headers_and_matched_row() -> None:
     chunks = [
         Chunk(chunk_id=7, source="demo.pdf", heading="1.1", level=2, line_no=1, content="content 1"),
@@ -45,7 +49,13 @@ def test_export_workbook_writes_expected_headers_and_matched_row() -> None:
         )
     ]
 
-    rows = _load_first_sheet_rows(build_export_workbook(chunks=chunks, results=results))
+    rows = _load_first_sheet_rows(
+        build_export_workbook(
+            chunks=chunks,
+            results_by_kb={"标准化配套知识库.json": results},
+            sheet_names_by_kb={"标准化配套知识库.json": "标准化配套结果"},
+        )
+    )
 
     assert rows[0] == EXPECTED_HEADERS
     assert rows[1] == (1, "1.1", "content 1", "分类A", "符合API 610", "P")
@@ -67,7 +77,13 @@ def test_export_workbook_writes_other_row_for_unmatched_chunk() -> None:
         )
     ]
 
-    rows = _load_first_sheet_rows(build_export_workbook(chunks=chunks, results=results))
+    rows = _load_first_sheet_rows(
+        build_export_workbook(
+            chunks=chunks,
+            results_by_kb={"标准化配套知识库.json": results},
+            sheet_names_by_kb={"标准化配套知识库.json": "标准化配套结果"},
+        )
+    )
 
     assert rows[0] == EXPECTED_HEADERS
     assert rows[1] == (1, "2.3", "content 2", None, None, "OTHER")
@@ -98,9 +114,77 @@ def test_export_workbook_preserves_chunk_order_for_missing_result_fallback() -> 
         )
     ]
 
-    rows = _load_first_sheet_rows(build_export_workbook(chunks=chunks, results=results))
+    rows = _load_first_sheet_rows(
+        build_export_workbook(
+            chunks=chunks,
+            results_by_kb={"标准化配套知识库.json": results},
+            sheet_names_by_kb={"标准化配套知识库.json": "标准化配套结果"},
+        )
+    )
 
     assert rows[0] == EXPECTED_HEADERS
     assert rows[1] == (1, "1.1", "content 1", None, None, "OTHER")
     assert rows[2] == (2, "1.2", "content 2", "分类B", "符合GB/T 123", "B")
     assert len(rows) == 3
+
+
+def test_export_workbook_writes_separate_sheets_for_multiple_knowledge_bases() -> None:
+    chunks = [
+        Chunk(chunk_id=1, source="demo.pdf", heading="1.1", level=2, line_no=1, content="content 1"),
+    ]
+    standard_results = [
+        ChunkCompareResult(
+            chunk_id=1,
+            heading="1.1",
+            content="content 1",
+            categories=["分类A"],
+            matches=[
+                MatchItem(
+                    entry_id="A-1",
+                    category="分类A",
+                    text="符合API 610",
+                    type_code="P",
+                    reason="语义一致",
+                )
+            ],
+            label="命中",
+        )
+    ]
+    tender_results = [
+        ChunkCompareResult(
+            chunk_id=1,
+            heading="1.1",
+            content="content 1",
+            categories=["非强制-报价行动"],
+            matches=[
+                MatchItem(
+                    entry_id="投标说明-1",
+                    category="非强制-报价行动",
+                    text="Clarify the tender action.",
+                    type_code="非强制-报价行动",
+                    reason="语义一致",
+                )
+            ],
+            label="命中",
+        )
+    ]
+
+    workbook = _load_workbook(
+        build_export_workbook(
+            chunks=chunks,
+            results_by_kb={
+                "标准化配套知识库.json": standard_results,
+                "投标说明知识库.json": tender_results,
+            },
+            sheet_names_by_kb={
+                "标准化配套知识库.json": "标准化配套结果",
+                "投标说明知识库.json": "投标说明结果",
+            },
+        )
+    )
+
+    assert workbook.sheetnames == ["标准化配套结果", "投标说明结果"]
+
+    tender_rows = list(workbook["投标说明结果"].iter_rows(values_only=True))
+    assert tender_rows[0] == EXPECTED_HEADERS
+    assert tender_rows[1] == (1, "1.1", "content 1", "非强制-报价行动", "Clarify the tender action.", "非强制-报价行动")

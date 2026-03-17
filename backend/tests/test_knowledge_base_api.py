@@ -5,11 +5,11 @@ from pathlib import Path
 from fastapi.testclient import TestClient
 
 from app.main import create_app
-from app.services.kb_loader import load_knowledge_base
+from app.services.compare_profiles import STANDARD_KB_FILE_NAME, TENDER_KB_FILE_NAME
 from app.services.knowledge_base_manager import KnowledgeBaseManager
 
 
-def test_knowledge_base_api_reads_and_saves_and_refreshes_matcher(tmp_path: Path) -> None:
+def test_knowledge_base_api_reads_and_saves_documents(tmp_path: Path) -> None:
     kb_dir = tmp_path / "knowledge"
     kb_dir.mkdir()
 
@@ -22,7 +22,6 @@ def test_knowledge_base_api_reads_and_saves_and_refreshes_matcher(tmp_path: Path
     app = create_app()
     app.state.knowledge_base_manager = KnowledgeBaseManager(kb_dir)
     app.state.settings.kb_path = str(target_file)
-    app.state.matcher_service.kb = load_knowledge_base(target_file)
 
     client = TestClient(app)
 
@@ -60,7 +59,10 @@ def test_knowledge_base_api_reads_and_saves_and_refreshes_matcher(tmp_path: Path
         "分类A": [{"条目1": "A"}],
         "分类B": [{"条目2": "B"}],
     }
-    assert "分类B" in app.state.matcher_service.kb.categories
+
+    refreshed_get_response = client.get("/api/v1/knowledge-bases/demo.json")
+    assert refreshed_get_response.status_code == 200
+    assert refreshed_get_response.json()["categories"][1]["name"] == "分类B"
 
 
 def test_knowledge_base_api_supports_create_delete_and_flat_format(tmp_path: Path) -> None:
@@ -129,3 +131,22 @@ def test_knowledge_base_api_rejects_deleting_active_compare_file(tmp_path: Path)
         case_variant_response = client.delete("/api/v1/knowledge-bases/ACTIVE.JSON")
         assert case_variant_response.status_code == 409
         assert target_file.exists()
+
+
+def test_knowledge_base_api_rejects_deleting_required_compare_profiles(tmp_path: Path) -> None:
+    kb_dir = tmp_path / "knowledge"
+    kb_dir.mkdir()
+
+    for file_name in (STANDARD_KB_FILE_NAME, TENDER_KB_FILE_NAME):
+        (kb_dir / file_name).write_text(json.dumps({"分类A": [{"条目1": "P"}]}, ensure_ascii=False), encoding="utf-8")
+
+    app = create_app()
+    app.state.knowledge_base_manager = KnowledgeBaseManager(kb_dir)
+    app.state.settings.kb_path = str(kb_dir / STANDARD_KB_FILE_NAME)
+    client = TestClient(app)
+
+    standard_delete_response = client.delete(f"/api/v1/knowledge-bases/{STANDARD_KB_FILE_NAME}")
+    tender_delete_response = client.delete(f"/api/v1/knowledge-bases/{TENDER_KB_FILE_NAME}")
+
+    assert standard_delete_response.status_code == 409
+    assert tender_delete_response.status_code == 409

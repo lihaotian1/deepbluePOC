@@ -3,8 +3,8 @@ from __future__ import annotations
 from fastapi import Request
 
 from app.config import Settings
-from app.services.matcher_service import MatcherService
 from app.services.knowledge_base_manager import KnowledgeBaseManager
+from app.services.llm_client import OpenAICompatibleMatcherLLM
 from app.services.session_store import SessionStore
 from app.services.splitter_service import SplitterService
 
@@ -21,8 +21,8 @@ def get_splitter_service(request: Request) -> SplitterService:
     return request.app.state.splitter_service
 
 
-def get_matcher_service(request: Request) -> MatcherService:
-    return request.app.state.matcher_service
+def get_matcher_llm(request: Request) -> OpenAICompatibleMatcherLLM:
+    return request.app.state.matcher_llm
 
 
 def get_knowledge_base_manager(request: Request) -> KnowledgeBaseManager:

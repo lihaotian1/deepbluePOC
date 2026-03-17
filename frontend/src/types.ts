@@ -1,5 +1,5 @@
-export type TypeCode = "P" | "A" | "B" | "C" | "OTHER";
-export type ResultFilterType = "ALL" | TypeCode;
+export type TypeCode = string;
+export type ResultFilterType = string;
 
 export interface Chunk {
   chunk_id: number;

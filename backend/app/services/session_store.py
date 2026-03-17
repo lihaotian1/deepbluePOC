@@ -16,7 +16,7 @@ class SessionStore:
             doc_id=str(uuid4()),
             source_file_name=source_file_name,
             chunks=chunks,
-            compare_results=[],
+            compare_results_by_kb={},
         )
         with self._lock:
             self._sessions[session.doc_id] = session
@@ -38,15 +38,17 @@ class SessionStore:
                 else:
                     next_chunks.append(chunk)
 
-            updated = session.model_copy(update={"chunks": next_chunks, "compare_results": []})
+            updated = session.model_copy(update={"chunks": next_chunks, "compare_results_by_kb": {}})
             self._sessions[doc_id] = updated
             return updated
 
-    def save_results(self, doc_id: str, results: list[ChunkCompareResult]) -> DocumentSession | None:
+    def save_results(self, doc_id: str, kb_file: str, results: list[ChunkCompareResult]) -> DocumentSession | None:
         with self._lock:
             session = self._sessions.get(doc_id)
             if session is None:
                 return None
-            updated = session.model_copy(update={"compare_results": results})
+            compare_results_by_kb = dict(session.compare_results_by_kb)
+            compare_results_by_kb[kb_file] = results
+            updated = session.model_copy(update={"compare_results_by_kb": compare_results_by_kb})
             self._sessions[doc_id] = updated
             return updated
