@@ -18,6 +18,7 @@ import {
   splitChunkContentIntoSentences,
   toggleReasonHighlight,
 } from "./chunkCardReasonHighlight";
+import { resolveChunkSummaryTags } from "./chunkCardSummaryTags";
 import {
   createChunkCardTranslationState,
   getChunkCardTranslationView,
@@ -72,6 +73,7 @@ function ChunkCard({ chunk, result, onChange }: ChunkCardProps) {
     [activeReasonHighlight, sourceSentences],
   );
   const resultTypeCodes = compareDisplayState.resultTypeCodes;
+  const summaryTags = useMemo(() => resolveChunkSummaryTags(result), [result]);
   const collapsedLineClamp = resolveChunkCardCollapsedLineClamp({
     synchronizedContentHeight: collapsedTagAreaHeight,
     lineHeight: COLLAPSED_SOURCE_LINE_HEIGHT,
@@ -183,7 +185,7 @@ function ChunkCard({ chunk, result, onChange }: ChunkCardProps) {
     if (compareDisplayState.state === "no-hit") {
       return (
         <div className="chunk-result-panel__summary" ref={ref}>
-          <ResultTag code="OTHER" />
+          <ResultTag code={summaryTags[0] ?? "OTHER"} />
           <span className="chunk-summary-pill">其他</span>
         </div>
       );
@@ -192,13 +194,8 @@ function ChunkCard({ chunk, result, onChange }: ChunkCardProps) {
     return (
       <div className="chunk-result-panel__summary" ref={ref}>
         <span className="chunk-summary-pill chunk-summary-pill--accent">命中 {result.matches.length} 条</span>
-        {resultTypeCodes.map((code) => (
+        {summaryTags.map((code) => (
           <ResultTag key={code} code={code} />
-        ))}
-        {result.categories.map((category) => (
-          <span key={category} className="chip">
-            {category}
-          </span>
         ))}
       </div>
     );
