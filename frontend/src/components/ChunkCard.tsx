@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
+import { translateChunkContent } from "../api/client";
 import type { Chunk, ChunkCompareResult } from "../types";
 import { autosizeTextarea } from "../utils/textareaAutosize";
 import {
@@ -17,6 +18,16 @@ import {
   splitChunkContentIntoSentences,
   toggleReasonHighlight,
 } from "./chunkCardReasonHighlight";
+import {
+  createChunkCardTranslationState,
+  getChunkCardTranslationView,
+  hasReusableChunkCardTranslation,
+  invalidateChunkCardTranslation,
+  receiveChunkCardTranslationFailure,
+  receiveChunkCardTranslationSuccess,
+  startChunkCardTranslation,
+  toggleChunkCardTranslationView,
+} from "./chunkCardTranslationState";
 import ResultTag from "./ResultTag";
 
 const EDITOR_MIN_HEIGHT = 44;
@@ -49,6 +60,7 @@ function ChunkCard({ chunk, result, onChange }: ChunkCardProps) {
   const editorRef = useRef<HTMLTextAreaElement | null>(null);
   const collapsedTagAreaRef = useRef<HTMLDivElement | null>(null);
   const [collapsedTagAreaHeight, setCollapsedTagAreaHeight] = useState(DEFAULT_COLLAPSED_TAG_AREA_HEIGHT);
+  const [translationState, setTranslationState] = useState(createChunkCardTranslationState);
 
   const viewState = useMemo(() => getChunkCardViewState({ expanded: expandResult }), [expandResult]);
   const title = useMemo(() => formatChunkCardTitle(chunk.heading), [chunk.heading]);
@@ -71,6 +83,11 @@ function ChunkCard({ chunk, result, onChange }: ChunkCardProps) {
   const isPreviewCollapsed = mode === "preview" && viewState.leftContentMode === "truncated";
   const synchronizedPreviewStyle = isPreviewCollapsed ? { height: `${collapsedPanelHeight}px` } : undefined;
   const resultToggleText = expandResult ? "收起" : "展开";
+  const translationView = useMemo(
+    () => getChunkCardTranslationView(translationState, chunk.content),
+    [chunk.content, translationState],
+  );
+  const isShowingTranslation = translationView.buttonText === "原文";
 
   useEffect(() => {
     if (mode !== "edit" || !editorRef.current) {
@@ -118,6 +135,41 @@ function ChunkCard({ chunk, result, onChange }: ChunkCardProps) {
   useEffect(() => {
     setActiveReasonHighlight(null);
   }, [reasonHighlightResetKey]);
+
+  useEffect(() => {
+    setTranslationState((currentState) => invalidateChunkCardTranslation(currentState, chunk.content));
+  }, [chunk.content]);
+
+  async function handleTranslationToggle() {
+    if (translationState.isTranslating || !chunk.content.trim()) {
+      return;
+    }
+
+    if (hasReusableChunkCardTranslation(translationState, chunk.content)) {
+      setTranslationState((currentState) => toggleChunkCardTranslationView(currentState));
+      return;
+    }
+
+    const sourceSnapshot = chunk.content;
+    setTranslationState((currentState) => startChunkCardTranslation(currentState, sourceSnapshot));
+
+    try {
+      const response = await translateChunkContent(sourceSnapshot);
+      setTranslationState((currentState) =>
+        receiveChunkCardTranslationSuccess(currentState, {
+          sourceSnapshot,
+          translation: response.translation,
+        }),
+      );
+    } catch {
+      setTranslationState((currentState) =>
+        receiveChunkCardTranslationFailure(currentState, {
+          sourceSnapshot,
+          message: "翻译失败，请重试",
+        }),
+      );
+    }
+  }
 
   const renderResultSummary = (ref?: typeof collapsedTagAreaRef) => {
     if (!result) {
@@ -181,7 +233,24 @@ function ChunkCard({ chunk, result, onChange }: ChunkCardProps) {
         <div className="chunk-panel">
           <div className="chunk-panel__head">
             <span className="muted">原文内容</span>
+            {mode === "preview" ? (
+              <div className="chunk-panel__actions">
+                {translationView.statusDotMode !== "hidden" ? (
+                  <span className={`pulse-dot${translationView.statusDotMode === "ready" ? " pulse-dot--static" : ""}`} />
+                ) : null}
+                <button
+                  className="mini-toggle"
+                  type="button"
+                  onClick={() => void handleTranslationToggle()}
+                  disabled={translationView.buttonDisabled}
+                >
+                  {translationView.buttonText}
+                </button>
+              </div>
+            ) : null}
           </div>
+
+          {translationView.errorMessage ? <p className="chunk-panel__error">{translationView.errorMessage}</p> : null}
 
           {mode === "edit" ? (
             <textarea
@@ -203,21 +272,23 @@ function ChunkCard({ chunk, result, onChange }: ChunkCardProps) {
                   lineHeight: `${COLLAPSED_SOURCE_LINE_HEIGHT}px`,
                 }}
               >
-                {chunk.content}
+                {translationView.displayText}
               </p>
             </div>
           ) : (
             <div className="source-panel">
               <div className="source-panel__content">
-                {sourceSentenceViewModels.map((sentence) => (
-                  <span
-                    key={sentence.index}
-                    className={`source-panel__sentence${sentence.isActive ? " is-active" : ""}`}
-                  >
-                    {sentence.text}
-                  </span>
-                ))}
-                {!sourceSentenceViewModels.length ? chunk.content : null}
+                {isShowingTranslation
+                  ? translationView.displayText
+                  : sourceSentenceViewModels.map((sentence) => (
+                      <span
+                        key={sentence.index}
+                        className={`source-panel__sentence${sentence.isActive ? " is-active" : ""}`}
+                      >
+                        {sentence.text}
+                      </span>
+                    ))}
+                {!isShowingTranslation && !sourceSentenceViewModels.length ? chunk.content : null}
               </div>
             </div>
           )}

@@ -537,6 +537,11 @@ body {
   animation: pulse 1.6s infinite;
 }
 
+.pulse-dot--static {
+  animation: none;
+  box-shadow: 0 0 0 1px rgba(74, 214, 184, 0.24);
+}
+
 .compare-panel__log {
   margin-top: 12px;
   border-radius: 12px;
@@ -623,6 +628,23 @@ body {
   padding: 2px 10px;
   font-size: 12px;
   cursor: pointer;
+}
+
+.mini-toggle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.chunk-panel__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chunk-panel__error {
+  margin: 0 0 8px;
+  color: #ffb8bf;
+  font-size: 12px;
 }
 
 .chunk-editor {

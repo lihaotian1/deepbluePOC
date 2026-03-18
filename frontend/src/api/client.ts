@@ -5,6 +5,7 @@ import type {
   KnowledgeBaseCreateRequest,
   KnowledgeBaseDocument,
   KnowledgeBaseFileSummary,
+  TranslationResponse,
   UploadResponse,
 } from "../types";
 import { buildAssetUrl, normalizeApiBase, resolveServerBase } from "./url";
@@ -40,6 +41,13 @@ export async function patchChunks(docId: string, chunks: Chunk[]): Promise<Uploa
 export async function exportExcel(docId: string): Promise<Blob> {
   const response = await http.get(`/documents/${docId}/export.xlsx`, {
     responseType: "blob",
+  });
+  return response.data;
+}
+
+export async function translateChunkContent(text: string): Promise<TranslationResponse> {
+  const response = await http.post<TranslationResponse>("/translate/chinese", {
+    text,
   });
   return response.data;
 }

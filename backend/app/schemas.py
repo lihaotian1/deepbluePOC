@@ -94,3 +94,19 @@ class KnowledgeBaseDocument(BaseModel):
 class KnowledgeBaseCreateRequest(BaseModel):
     file_name: str
     format: Literal["grouped", "flat_key_value"] = "grouped"
+
+
+class TranslationRequest(BaseModel):
+    text: str = Field(min_length=1)
+
+    @field_validator("text")
+    @classmethod
+    def validate_non_blank_text(cls, value: str) -> str:
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError("Text must not be blank.")
+        return normalized
+
+
+class TranslationResponse(BaseModel):
+    translation: str

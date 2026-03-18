@@ -157,6 +157,31 @@ class OpenAICompatibleMatcherLLM:
             grouped.setdefault(_get_chunk_id(chunk), [])
         return dict(grouped)
 
+    async def translate_to_chinese(self, *, text: str) -> str:
+        if not self.api_key:
+            raise ValueError("Translation service is not configured.")
+
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a technical translator. Translate the user text into simplified Chinese, "
+                    "preserve technical meaning, units, and structure, add no explanation, and respond "
+                    "with JSON in the shape {\"translation\":\"...\"}."
+                ),
+            },
+            {"role": "user", "content": text},
+        ]
+        payload = await self._chat_json(messages)
+        translation = payload.get("translation")
+        if not isinstance(translation, str):
+            raise ValueError("LLM translation response must contain string 'translation'.")
+
+        normalized = translation.strip()
+        if not normalized:
+            raise ValueError("LLM translation response must not be empty.")
+        return normalized
+
     async def _chat_json(self, messages: list[dict[str, str]]) -> dict:
         url = f"{self.base_url}/chat/completions"
         body = {

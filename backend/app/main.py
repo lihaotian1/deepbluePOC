@@ -6,6 +6,7 @@ from app.api.compare_routes import router as compare_router
 from app.api.document_routes import router as document_router
 from app.api.export_routes import router as export_router
 from app.api.knowledge_base_routes import router as knowledge_base_router
+from app.api.translation_routes import router as translation_router
 from app.config import Settings
 from app.services.knowledge_base_manager import KnowledgeBaseManager
 from app.services.llm_client import OpenAICompatibleMatcherLLM
@@ -52,6 +53,7 @@ def create_app() -> FastAPI:
     app.include_router(compare_router, prefix=api_prefix)
     app.include_router(export_router, prefix=api_prefix)
     app.include_router(knowledge_base_router, prefix=api_prefix)
+    app.include_router(translation_router, prefix=api_prefix)
     app.mount("/assets/logo", StaticFiles(directory=settings.logo_path), name="logo-assets")
 
     return app

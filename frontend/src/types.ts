@@ -16,6 +16,10 @@ export interface UploadResponse {
   chunks: Chunk[];
 }
 
+export interface TranslationResponse {
+  translation: string;
+}
+
 export interface MatchItem {
   entry_id: string;
   category: string;
