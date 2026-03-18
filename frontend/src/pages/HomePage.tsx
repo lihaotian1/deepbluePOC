@@ -11,6 +11,7 @@ import {
   buildFilterModelForKnowledgeBase,
   collectTypeCodes,
   invalidateCompareStateAfterChunkEdit,
+  mergeChunkCompareResult,
   toggleKnowledgeBaseSelection,
 } from "./homePageCompareState";
 import type {
@@ -141,7 +142,6 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
       return;
     }
     setComparing(true);
-    setResultsByKb({});
     setActiveResultKbFile(selectedCompareKbFiles[0] ?? STANDARD_KB_FILE_NAME);
     setActiveFilter("ALL");
     setLogs([]);
@@ -174,13 +174,7 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
             if (!result || typeof result.chunk_id !== "number" || !kbFile) {
               return;
             }
-            setResultsByKb((prev) => ({
-              ...prev,
-              [kbFile]: {
-                ...(prev[kbFile] ?? {}),
-                [result.chunk_id]: result,
-              },
-            }));
+            setResultsByKb((prev) => mergeChunkCompareResult(prev, kbFile, result));
             appendLog(`${logPrefix}第 ${result.chunk_id} 段处理完成 (${result.label})`);
             return;
           }
@@ -213,6 +207,11 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
         },
         (message) => {
           appendLog(message);
+        },
+        {
+          onRetry: (message) => {
+            appendLog(message);
+          },
         },
       );
     } catch (error) {

@@ -1,1 +1,10 @@
 .worktrees/
+
+# Python caches
+**/__pycache__/
+*.pyc
+*.pyo
+
+# Frontend build and install artifacts
+frontend/dist/
+frontend/node_modules/

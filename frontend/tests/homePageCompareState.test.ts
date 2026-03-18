@@ -6,6 +6,7 @@ import {
   TENDER_KB_FILE_NAME,
   buildFilterModelForKnowledgeBase,
   invalidateCompareStateAfterChunkEdit,
+  mergeChunkCompareResult,
   toggleKnowledgeBaseSelection,
 } from "../src/pages/homePageCompareState.ts";
 import type { ChunkCompareResult } from "../src/types";
@@ -101,4 +102,21 @@ test("knowledge-base selection stays locked while compare is running", () => {
   const selected = toggleKnowledgeBaseSelection([STANDARD_KB_FILE_NAME], TENDER_KB_FILE_NAME, [STANDARD_KB_FILE_NAME, TENDER_KB_FILE_NAME], true);
 
   assert.deepEqual(selected, [STANDARD_KB_FILE_NAME]);
+});
+
+
+test("merging a retried chunk result preserves existing completed results", () => {
+  const merged = mergeChunkCompareResult(
+    {
+      [STANDARD_KB_FILE_NAME]: {
+        1: buildResult(1, "P"),
+      },
+    },
+    STANDARD_KB_FILE_NAME,
+    buildResult(2, "A"),
+  );
+
+  assert.deepEqual(Object.keys(merged[STANDARD_KB_FILE_NAME]).map(Number).sort((a, b) => a - b), [1, 2]);
+  assert.equal(merged[STANDARD_KB_FILE_NAME][1].matches[0].type_code, "P");
+  assert.equal(merged[STANDARD_KB_FILE_NAME][2].matches[0].type_code, "A");
 });

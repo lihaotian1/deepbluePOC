@@ -56,11 +56,18 @@ class ChunkCompareResult(BaseModel):
     label: Literal["命中", "其他"]
 
 
+class ChunkCompareProgress(BaseModel):
+    status: Literal["pending", "running", "succeeded", "failed"] = "pending"
+    result: ChunkCompareResult | None = None
+    error_message: str = ""
+
+
 class DocumentSession(BaseModel):
     doc_id: str
     source_file_name: str
     chunks: list[Chunk] = Field(default_factory=list)
     compare_results_by_kb: dict[str, list[ChunkCompareResult]] = Field(default_factory=dict)
+    compare_progress_by_kb: dict[str, dict[int, ChunkCompareProgress]] = Field(default_factory=dict)
 
 
 class DocumentUploadResponse(BaseModel):

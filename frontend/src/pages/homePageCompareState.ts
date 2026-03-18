@@ -45,6 +45,20 @@ export function invalidateCompareStateAfterChunkEdit(state: HomePageCompareState
   };
 }
 
+export function mergeChunkCompareResult(
+  resultsByKb: Record<string, Record<number, ChunkCompareResult>>,
+  kbFile: string,
+  result: ChunkCompareResult,
+): Record<string, Record<number, ChunkCompareResult>> {
+  return {
+    ...resultsByKb,
+    [kbFile]: {
+      ...(resultsByKb[kbFile] ?? {}),
+      [result.chunk_id]: result,
+    },
+  };
+}
+
 export function buildFilterModelForKnowledgeBase(
   kbFile: string,
   resultMap: Record<number, ChunkCompareResult>,
