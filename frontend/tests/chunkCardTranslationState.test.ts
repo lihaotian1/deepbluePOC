@@ -63,7 +63,7 @@ test("successful translation switches to chinese text and keeps a static pulse d
   });
 });
 
-test("toggling back to the original text preserves the cached translation for reuse", () => {
+test("toggling back to the original text preserves the cached translation and keeps the static dot visible", () => {
   const loadingState = startChunkCardTranslation(createChunkCardTranslationState(), "Pump shall include bearings.");
   const translatedState = receiveChunkCardTranslationSuccess(loadingState, {
     sourceSnapshot: "Pump shall include bearings.",
@@ -76,7 +76,7 @@ test("toggling back to the original text preserves the cached translation for re
     buttonText: "翻译",
     displayText: "Pump shall include bearings.",
     errorMessage: "",
-    statusDotMode: "hidden",
+    statusDotMode: "ready",
   });
 
   assert.deepEqual(getChunkCardTranslationView(toggleChunkCardTranslationView(sourceViewState), "Pump shall include bearings."), {

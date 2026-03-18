@@ -54,11 +54,11 @@ export function getChunkCardTranslationView(
     };
   }
 
-  if (hasReusableChunkCardTranslation(state, currentSourceText) && state.isShowingTranslation) {
+  if (hasReusableChunkCardTranslation(state, currentSourceText)) {
     return {
       buttonDisabled: false,
-      buttonText: "原文",
-      displayText: state.translatedText,
+      buttonText: state.isShowingTranslation ? "原文" : "翻译",
+      displayText: state.isShowingTranslation ? state.translatedText : currentSourceText,
       errorMessage: "",
       statusDotMode: "ready",
     };
