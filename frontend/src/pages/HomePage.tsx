@@ -258,7 +258,7 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
 
       <section className="hero">
         <p className="hero__eyebrow">AI Assistant</p>
-        <h1>智能比对</h1>
+        <h1>技术协议偏差分析POC</h1>
       </section>
 
       <UploadPanel
