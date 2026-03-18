@@ -13,6 +13,8 @@ EXPECTED_HEADERS = (
     "标准偏差类型",
     "标准偏差原文",
     "标准偏差分类",
+    "审核意见",
+    "审核状态",
 )
 
 
@@ -46,6 +48,7 @@ def test_export_workbook_writes_expected_headers_and_matched_row() -> None:
                 )
             ],
             label="命中",
+            review_status="已审",
         )
     ]
 
@@ -58,7 +61,7 @@ def test_export_workbook_writes_expected_headers_and_matched_row() -> None:
     )
 
     assert rows[0] == EXPECTED_HEADERS
-    assert rows[1] == (1, "1.1", "content 1", "分类A", "符合API 610", "P")
+    assert rows[1] == (1, "1.1", "content 1", "分类A", "符合API 610", "P", "语义一致", "已审")
     assert len(rows) == 2
 
 
@@ -74,6 +77,7 @@ def test_export_workbook_writes_other_row_for_unmatched_chunk() -> None:
             categories=[],
             matches=[],
             label="其他",
+            review_status="未审",
         )
     ]
 
@@ -86,7 +90,7 @@ def test_export_workbook_writes_other_row_for_unmatched_chunk() -> None:
     )
 
     assert rows[0] == EXPECTED_HEADERS
-    assert rows[1] == (1, "2.3", "content 2", None, None, "OTHER")
+    assert rows[1] == (1, "2.3", "content 2", None, None, "OTHER", None, "未审")
     assert len(rows) == 2
 
 
@@ -111,6 +115,7 @@ def test_export_workbook_preserves_chunk_order_for_missing_result_fallback() -> 
                 )
             ],
             label="命中",
+            review_status="未审",
         )
     ]
 
@@ -123,8 +128,8 @@ def test_export_workbook_preserves_chunk_order_for_missing_result_fallback() -> 
     )
 
     assert rows[0] == EXPECTED_HEADERS
-    assert rows[1] == (1, "1.1", "content 1", None, None, "OTHER")
-    assert rows[2] == (2, "1.2", "content 2", "分类B", "符合GB/T 123", "B")
+    assert rows[1] == (1, "1.1", "content 1", None, None, "OTHER", None, "未审")
+    assert rows[2] == (2, "1.2", "content 2", "分类B", "符合GB/T 123", "B", "语义一致", "未审")
     assert len(rows) == 3
 
 
@@ -148,6 +153,7 @@ def test_export_workbook_writes_separate_sheets_for_multiple_knowledge_bases() -
                 )
             ],
             label="命中",
+            review_status="已审",
         )
     ]
     tender_results = [
@@ -166,6 +172,7 @@ def test_export_workbook_writes_separate_sheets_for_multiple_knowledge_bases() -
                 )
             ],
             label="命中",
+            review_status="未审",
         )
     ]
 
@@ -187,4 +194,4 @@ def test_export_workbook_writes_separate_sheets_for_multiple_knowledge_bases() -
 
     tender_rows = list(workbook["投标说明结果"].iter_rows(values_only=True))
     assert tender_rows[0] == EXPECTED_HEADERS
-    assert tender_rows[1] == (1, "1.1", "content 1", "非强制-报价行动", "Clarify the tender action.", "非强制-报价行动")
+    assert tender_rows[1] == (1, "1.1", "content 1", "非强制-报价行动", "Clarify the tender action.", "非强制-报价行动", "语义一致", "未审")

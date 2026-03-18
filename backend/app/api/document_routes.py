@@ -3,7 +3,12 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.api.deps import get_session_store, get_splitter_service
-from app.schemas import ChunkUpdateRequest, DocumentUploadResponse
+from app.schemas import (
+    ChunkUpdateRequest,
+    DocumentReviewResponse,
+    DocumentReviewUpdateRequest,
+    DocumentUploadResponse,
+)
 from app.services.session_store import SessionStore
 from app.services.splitter_service import SplitterService
 
@@ -43,4 +48,25 @@ async def patch_chunks(
         doc_id=session.doc_id,
         source_file_name=session.source_file_name,
         chunks=session.chunks,
+    )
+
+
+@router.put("/{doc_id}/review", response_model=DocumentReviewResponse)
+async def save_review_state(
+    doc_id: str,
+    request: DocumentReviewUpdateRequest,
+    store: SessionStore = Depends(get_session_store),
+) -> DocumentReviewResponse:
+    session = store.save_review_state(
+        doc_id,
+        compare_results_by_kb=request.compare_results_by_kb,
+        submitted_for_review=request.submitted_for_review,
+    )
+    if session is None:
+        raise HTTPException(status_code=404, detail="Document session not found")
+
+    return DocumentReviewResponse(
+        doc_id=session.doc_id,
+        compare_results_by_kb=session.compare_results_by_kb,
+        submitted_for_review=session.submitted_for_review,
     )

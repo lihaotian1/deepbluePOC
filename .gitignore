@@ -1,4 +1,5 @@
 .worktrees/
+.env
 
 # Python caches
 **/__pycache__/
@@ -8,3 +9,7 @@
 # Frontend build and install artifacts
 frontend/dist/
 frontend/node_modules/
+
+# Local outputs and reports
+data/output/
+docs/reports/

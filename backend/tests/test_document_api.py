@@ -33,6 +33,66 @@ def test_upload_and_patch_chunks_flow() -> None:
     assert first_chunk["content"] == new_text
 
 
+def test_review_update_persists_reviewed_results_and_submission_state() -> None:
+    app = create_app()
+    client = TestClient(app)
+
+    response = client.post(
+        "/api/v1/documents/upload",
+        files={"file": ("demo.md", "1 总则\n这是正文。\n".encode("utf-8"), "text/markdown")},
+    )
+    assert response.status_code == 200
+    payload = response.json()
+
+    doc_id = payload["doc_id"]
+    chunk = payload["chunks"][0]
+    review_response = client.put(
+        f"/api/v1/documents/{doc_id}/review",
+        json={
+            "submitted_for_review": True,
+            "compare_results_by_kb": {
+                "标准化配套知识库.json": [
+                    {
+                        "chunk_id": chunk["chunk_id"],
+                        "heading": chunk["heading"],
+                        "content": chunk["content"],
+                        "categories": ["分类A"],
+                        "matches": [
+                            {
+                                "entry_id": "manual-1",
+                                "category": "分类A",
+                                "text": "人工补充条目",
+                                "type_code": "P",
+                                "reason": "人工审核意见",
+                                "evidence_sentence_index": None,
+                                "evidence_sentence_text": "",
+                            }
+                        ],
+                        "label": "命中",
+                        "review_status": "已审",
+                    }
+                ]
+            },
+        },
+    )
+
+    assert review_response.status_code == 200
+    review_payload = review_response.json()
+    assert review_payload["submitted_for_review"] is True
+    assert review_payload["compare_results_by_kb"]["标准化配套知识库.json"][0]["review_status"] == "已审"
+
+    patch_response = client.patch(
+        f"/api/v1/documents/{doc_id}/chunks",
+        json={"chunks": [{"chunk_id": chunk["chunk_id"], "content": "人工修改后的正文"}]},
+    )
+
+    assert patch_response.status_code == 200
+    session = app.state.session_store.get(doc_id)
+    assert session is not None
+    assert session.compare_results_by_kb == {}
+    assert session.submitted_for_review is False
+
+
 def test_upload_tries_gpt_first_and_falls_back_to_engineering_on_gpt_error(tmp_path: Path) -> None:
     calls: list[str] = []
 

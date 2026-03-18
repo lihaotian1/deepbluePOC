@@ -2,6 +2,8 @@ import axios from "axios";
 
 import type {
   Chunk,
+  DocumentReviewResponse,
+  DocumentReviewUpdateRequest,
   KnowledgeBaseCreateRequest,
   KnowledgeBaseDocument,
   KnowledgeBaseFileSummary,
@@ -35,6 +37,14 @@ export async function patchChunks(docId: string, chunks: Chunk[]): Promise<Uploa
       content: chunk.content,
     })),
   });
+  return response.data;
+}
+
+export async function saveDocumentReviewState(
+  docId: string,
+  payload: DocumentReviewUpdateRequest,
+): Promise<DocumentReviewResponse> {
+  const response = await http.put<DocumentReviewResponse>(`/documents/${docId}/review`, payload);
   return response.data;
 }
 

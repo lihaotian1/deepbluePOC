@@ -15,6 +15,8 @@ HEADERS = [
     "标准偏差类型",
     "标准偏差原文",
     "标准偏差分类",
+    "审核意见",
+    "审核状态",
 ]
 
 
@@ -63,11 +65,12 @@ def _populate_result_sheet(
     for chunk in chunks:
         row = result_map.get(chunk.chunk_id)
         if row is None or not row.matches:
-            exported_rows.append([chunk.heading, chunk.content, None, None, "OTHER"])
+            review_status = row.review_status if row is not None else "未审"
+            exported_rows.append([chunk.heading, chunk.content, None, None, "OTHER", None, review_status])
             continue
 
         for match in row.matches:
-            exported_rows.append([chunk.heading, chunk.content, match.category, match.text, match.type_code])
+            exported_rows.append([chunk.heading, chunk.content, match.category, match.text, match.type_code, match.reason or None, row.review_status])
 
     chunk_ids = {chunk.chunk_id for chunk in chunks}
     for row in results:
@@ -75,11 +78,11 @@ def _populate_result_sheet(
             continue
 
         if not row.matches:
-            exported_rows.append([row.heading, row.content, None, None, "OTHER"])
+            exported_rows.append([row.heading, row.content, None, None, "OTHER", None, row.review_status])
             continue
 
         for match in row.matches:
-            exported_rows.append([row.heading, row.content, match.category, match.text, match.type_code])
+            exported_rows.append([row.heading, row.content, match.category, match.text, match.type_code, match.reason or None, row.review_status])
 
     for index, row in enumerate(exported_rows, start=1):
         sheet.append([index, *row])

@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { exportExcel, patchChunks, uploadDocument } from "../api/client";
+import { exportExcel, patchChunks, saveDocumentReviewState, uploadDocument } from "../api/client";
 import { streamCompare } from "../api/sse";
 import ChunkCard from "../components/ChunkCard";
 import ComparePanel from "../components/ComparePanel";
@@ -14,6 +14,7 @@ import {
   mergeChunkCompareResult,
   toggleKnowledgeBaseSelection,
 } from "./homePageCompareState";
+import { normalizeReviewResult } from "./homePageReviewState";
 import type {
   Chunk,
   ChunkCompareResult,
@@ -38,6 +39,8 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
   const [progressText, setProgressText] = useState("等待上传文件");
   const [activeFilter, setActiveFilter] = useState<ResultFilterType>("ALL");
   const [hasPendingChunkSync, setHasPendingChunkSync] = useState(false);
+  const [hasPendingReviewSync, setHasPendingReviewSync] = useState(false);
+  const [submittedForReview, setSubmittedForReview] = useState(false);
 
   const compareOptions = useMemo(() => {
     return DEFAULT_COMPARE_KB_FILES.map((fileName) => {
@@ -110,6 +113,8 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
       setDocId(response.doc_id);
       setChunks(response.chunks);
       setHasPendingChunkSync(false);
+      setHasPendingReviewSync(false);
+      setSubmittedForReview(false);
       setActiveFilter("ALL");
       setActiveResultKbFile(selectedCompareKbFiles[0] ?? STANDARD_KB_FILE_NAME);
       setProgressText(`切分完成，共 ${response.chunks.length} 段`);
@@ -125,6 +130,8 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
   function handleChunkChange(chunkId: number, value: string) {
     setChunks((prev) => prev.map((chunk) => (chunk.chunk_id === chunkId ? { ...chunk, content: value } : chunk)));
     setHasPendingChunkSync(true);
+    setHasPendingReviewSync(false);
+    setSubmittedForReview(false);
 
     const nextCompareState = invalidateCompareStateAfterChunkEdit({ resultsByKb, activeFilter });
     if (nextCompareState.resultsByKb !== resultsByKb) {
@@ -137,6 +144,52 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
     setProgressText("章节内容已修改，历史比对结果已失效");
   }
 
+  function handleReviewResultChange(chunkId: number, nextResult: ChunkCompareResult) {
+    setResultsByKb((prev) => ({
+      ...prev,
+      [activeResultKbFile]: {
+        ...(prev[activeResultKbFile] ?? {}),
+        [chunkId]: normalizeReviewResult(nextResult),
+      },
+    }));
+    setHasPendingReviewSync(true);
+    setSubmittedForReview(false);
+  }
+
+  function buildReviewPayload(nextSubmittedForReview: boolean) {
+    return {
+      compare_results_by_kb: Object.fromEntries(
+        Object.entries(resultsByKb).map(([kbFile, resultMap]) => [
+          kbFile,
+          Object.values(resultMap)
+            .map((result) => normalizeReviewResult(result))
+            .sort((left, right) => left.chunk_id - right.chunk_id),
+        ]),
+      ),
+      submitted_for_review: nextSubmittedForReview,
+    };
+  }
+
+  function mapReviewResultsByKb(nextResultsByKb: Record<string, ChunkCompareResult[]>) {
+    return Object.fromEntries(
+      Object.entries(nextResultsByKb).map(([kbFile, resultList]) => [
+        kbFile,
+        Object.fromEntries(resultList.map((result) => [result.chunk_id, normalizeReviewResult(result)])),
+      ]),
+    );
+  }
+
+  async function syncReviewState(nextSubmittedForReview: boolean) {
+    if (!docId) {
+      return;
+    }
+
+    const response = await saveDocumentReviewState(docId, buildReviewPayload(nextSubmittedForReview));
+    setResultsByKb(mapReviewResultsByKb(response.compare_results_by_kb));
+    setSubmittedForReview(response.submitted_for_review);
+    setHasPendingReviewSync(false);
+  }
+
   async function handleCompare() {
     if (!docId || chunks.length === 0 || selectedCompareKbFiles.length === 0) {
       return;
@@ -145,6 +198,8 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
     setActiveResultKbFile(selectedCompareKbFiles[0] ?? STANDARD_KB_FILE_NAME);
     setActiveFilter("ALL");
     setLogs([]);
+    setSubmittedForReview(false);
+    setHasPendingReviewSync(false);
     setProgressText("正在提交编辑内容...");
 
     try {
@@ -234,6 +289,12 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
         appendLog("编辑内容已保存，历史比对结果已清除");
       }
 
+      if (hasPendingReviewSync) {
+        setProgressText("正在同步审核内容...");
+        await syncReviewState(submittedForReview);
+        appendLog("审核内容已同步");
+      }
+
       setProgressText("正在导出 Excel...");
       const blob = await exportExcel(docId);
       const href = URL.createObjectURL(blob);
@@ -248,6 +309,28 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
       appendLog("Excel 导出成功");
     } catch (error) {
       appendLog(`导出失败: ${String(error)}`);
+    }
+  }
+
+  async function handleSubmitReview() {
+    if (!docId) {
+      return;
+    }
+
+    try {
+      if (hasPendingChunkSync) {
+        setProgressText("正在保存编辑内容...");
+        await patchChunks(docId, chunks);
+        setHasPendingChunkSync(false);
+        appendLog("编辑内容已保存，审核提交将使用最新正文");
+      }
+
+      setProgressText("正在提交审核...");
+      await syncReviewState(true);
+      setProgressText("文档已提交审核");
+      appendLog("文档已提交审核");
+    } catch (error) {
+      appendLog(`提交审核失败: ${String(error)}`);
     }
   }
 
@@ -275,9 +358,11 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
         logs={logs}
         knowledgeBaseOptions={compareOptions}
         selectedKnowledgeBaseFiles={selectedCompareKbFiles}
+        submittedForReview={submittedForReview}
         onToggleKnowledgeBase={handleToggleKnowledgeBase}
         onCompare={handleCompare}
         onExport={handleExport}
+        onSubmitReview={handleSubmitReview}
       />
 
       <section className="glass-card filter-panel">
@@ -322,7 +407,14 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
 
       <section className="chunks-grid">
         {filteredChunks.map((chunk) => (
-          <ChunkCard key={chunk.chunk_id} chunk={chunk} result={activeResultMap[chunk.chunk_id]} onChange={handleChunkChange} />
+          <ChunkCard
+            key={chunk.chunk_id}
+            chunk={chunk}
+            result={activeResultMap[chunk.chunk_id]}
+            activeKnowledgeBaseFile={activeResultKbFile}
+            onChange={handleChunkChange}
+            onReviewChange={handleReviewResultChange}
+          />
         ))}
       </section>
     </section>
