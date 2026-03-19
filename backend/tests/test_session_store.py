@@ -57,8 +57,9 @@ def test_update_chunks_clears_saved_compare_results() -> None:
     assert updated.chunks[0].content == "edited"
     assert updated.chunks[1].content == "second"
     assert updated.compare_results_by_kb == {}
-    assert store.get(session.doc_id) is not None
-    assert store.get(session.doc_id).compare_results_by_kb == {}
+    persisted = store.get(session.doc_id)
+    assert persisted is not None
+    assert persisted.compare_results_by_kb == {}
 
 
 def test_save_results_tracks_each_knowledge_base_separately() -> None:
@@ -84,3 +85,28 @@ def test_save_results_tracks_each_knowledge_base_separately() -> None:
     assert set(tender_saved.compare_results_by_kb) == {"标准化配套知识库.json", "投标说明知识库.json"}
     assert len(tender_saved.compare_results_by_kb["标准化配套知识库.json"]) == 1
     assert len(tender_saved.compare_results_by_kb["投标说明知识库.json"]) == 1
+
+
+def test_save_review_state_replaces_results_and_submission_flag() -> None:
+    store = SessionStore()
+    session = store.create(
+        source_file_name="demo.md",
+        chunks=[build_chunk(chunk_id=1, content="original")],
+    )
+
+    reviewed_result = build_result(chunk_id=1, content="original").model_copy(update={"review_status": "已审"})
+    updated = store.save_review_state(
+        session.doc_id,
+        compare_results_by_kb={"标准化配套知识库.json": [reviewed_result]},
+        submitted_for_review=True,
+    )
+
+    assert updated is not None
+    assert updated.submitted_for_review is True
+    assert updated.compare_results_by_kb["标准化配套知识库.json"][0].review_status == "已审"
+
+    cleared = store.update_chunks(session.doc_id, {1: "edited"})
+
+    assert cleared is not None
+    assert cleared.compare_results_by_kb == {}
+    assert cleared.submitted_for_review is False

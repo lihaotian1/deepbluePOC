@@ -54,6 +54,7 @@ class ChunkCompareResult(BaseModel):
     categories: list[str] = Field(default_factory=list)
     matches: list[MatchItem] = Field(default_factory=list)
     label: Literal["命中", "其他"]
+    review_status: Literal["已审", "未审"] = "未审"
 
 
 class ChunkCompareProgress(BaseModel):
@@ -68,12 +69,24 @@ class DocumentSession(BaseModel):
     chunks: list[Chunk] = Field(default_factory=list)
     compare_results_by_kb: dict[str, list[ChunkCompareResult]] = Field(default_factory=dict)
     compare_progress_by_kb: dict[str, dict[int, ChunkCompareProgress]] = Field(default_factory=dict)
+    submitted_for_review: bool = False
 
 
 class DocumentUploadResponse(BaseModel):
     doc_id: str
     source_file_name: str
     chunks: list[Chunk]
+
+
+class DocumentReviewUpdateRequest(BaseModel):
+    compare_results_by_kb: dict[str, list[ChunkCompareResult]] = Field(default_factory=dict)
+    submitted_for_review: bool = False
+
+
+class DocumentReviewResponse(BaseModel):
+    doc_id: str
+    compare_results_by_kb: dict[str, list[ChunkCompareResult]] = Field(default_factory=dict)
+    submitted_for_review: bool = False
 
 
 class KnowledgeBaseFileSummary(BaseModel):

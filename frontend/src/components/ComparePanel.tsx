@@ -1,4 +1,94 @@
+import { useCallback, useEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from "react";
+import { createPortal } from "react-dom";
+
 import type { KnowledgeBaseFileSummary } from "../types";
+import { getComparePanelConfirmDialogState } from "./comparePanelConfirmDialogState";
+import {
+  buildComparePanelActionButtons,
+  getVisibleComparePanelLogs,
+  shouldKeepComparePanelLogPinnedToBottom,
+} from "./comparePanelViewState";
+
+function lockGlobalModalScroll() {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const body = document.body;
+  const currentCount = Number(body.dataset.modalLockCount ?? "0");
+  body.dataset.modalLockCount = `${currentCount + 1}`;
+  body.classList.add("has-modal-open");
+}
+
+function unlockGlobalModalScroll() {
+  if (typeof document === "undefined") {
+    return;
+  }
+
+  const body = document.body;
+  const currentCount = Number(body.dataset.modalLockCount ?? "0");
+  const nextCount = Math.max(0, currentCount - 1);
+
+  if (nextCount === 0) {
+    delete body.dataset.modalLockCount;
+    body.classList.remove("has-modal-open");
+    return;
+  }
+
+  body.dataset.modalLockCount = `${nextCount}`;
+}
+
+function focusFirstModalElement(container: HTMLElement | null) {
+  if (!container) {
+    return;
+  }
+
+  const focusableElements = Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  );
+
+  if (focusableElements.length) {
+    focusableElements[0].focus();
+    return;
+  }
+
+  container.focus();
+}
+
+function trapFocusWithinModal(event: ReactKeyboardEvent<HTMLElement>, container: HTMLElement | null) {
+  if (event.key !== "Tab" || !container) {
+    return;
+  }
+
+  const focusableElements = Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+    ),
+  );
+
+  if (!focusableElements.length) {
+    event.preventDefault();
+    container.focus();
+    return;
+  }
+
+  const firstElement = focusableElements[0];
+  const lastElement = focusableElements[focusableElements.length - 1];
+  const activeElement = document.activeElement;
+
+  if (event.shiftKey && activeElement === firstElement) {
+    event.preventDefault();
+    lastElement.focus();
+    return;
+  }
+
+  if (!event.shiftKey && activeElement === lastElement) {
+    event.preventDefault();
+    firstElement.focus();
+  }
+}
 
 interface ComparePanelProps {
   hasDocument: boolean;
@@ -7,9 +97,11 @@ interface ComparePanelProps {
   logs: string[];
   knowledgeBaseOptions: KnowledgeBaseFileSummary[];
   selectedKnowledgeBaseFiles: string[];
+  submittedForReview: boolean;
   onToggleKnowledgeBase: (fileName: string) => void;
   onCompare: () => void;
   onExport: () => void;
+  onSubmitReview: () => void;
 }
 
 function ComparePanel(props: ComparePanelProps) {
@@ -20,10 +112,93 @@ function ComparePanel(props: ComparePanelProps) {
     logs,
     knowledgeBaseOptions,
     selectedKnowledgeBaseFiles,
+    submittedForReview,
     onToggleKnowledgeBase,
     onCompare,
     onExport,
+    onSubmitReview,
   } = props;
+  const actionButtons = buildComparePanelActionButtons(comparing);
+  const visibleLogs = getVisibleComparePanelLogs(logs);
+  const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
+  const logRef = useRef<HTMLDivElement | null>(null);
+  const submitDialogRef = useRef<HTMLElement | null>(null);
+  const logScrollCleanupRef = useRef<(() => void) | null>(null);
+  const shouldAutoScrollRef = useRef(true);
+  const submitDialog = getComparePanelConfirmDialogState(isSubmitDialogOpen);
+
+  const setLogRef = useCallback((node: HTMLDivElement | null) => {
+    if (logScrollCleanupRef.current) {
+      logScrollCleanupRef.current();
+      logScrollCleanupRef.current = null;
+    }
+
+    logRef.current = node;
+    if (!node) {
+      return;
+    }
+
+    const updatePinnedState = () => {
+      shouldAutoScrollRef.current = shouldKeepComparePanelLogPinnedToBottom({
+        scrollTop: node.scrollTop,
+        clientHeight: node.clientHeight,
+        scrollHeight: node.scrollHeight,
+      });
+    };
+
+    updatePinnedState();
+    node.addEventListener("scroll", updatePinnedState);
+    logScrollCleanupRef.current = () => node.removeEventListener("scroll", updatePinnedState);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (logScrollCleanupRef.current) {
+        logScrollCleanupRef.current();
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isSubmitDialogOpen) {
+      return;
+    }
+
+    lockGlobalModalScroll();
+    return () => unlockGlobalModalScroll();
+  }, [isSubmitDialogOpen]);
+
+  useEffect(() => {
+    if (!isSubmitDialogOpen) {
+      return;
+    }
+
+    focusFirstModalElement(submitDialogRef.current);
+  }, [isSubmitDialogOpen]);
+
+  useEffect(() => {
+    const logContainer = logRef.current;
+    if (!logContainer) {
+      return;
+    }
+
+    if (shouldAutoScrollRef.current) {
+      logContainer.scrollTop = logContainer.scrollHeight;
+    }
+  }, [visibleLogs]);
+
+  function handleOpenSubmitDialog() {
+    setIsSubmitDialogOpen(true);
+  }
+
+  function handleCloseSubmitDialog() {
+    setIsSubmitDialogOpen(false);
+  }
+
+  function handleConfirmSubmitDialog() {
+    setIsSubmitDialogOpen(false);
+    void onSubmitReview();
+  }
 
   return (
     <section className="glass-card compare-panel">
@@ -58,12 +233,16 @@ function ComparePanel(props: ComparePanelProps) {
       </div>
 
       <div className="compare-panel__actions">
-        <button className="btn btn-primary" onClick={onCompare} disabled={!hasDocument || comparing || !selectedKnowledgeBaseFiles.length}>
-          {comparing ? "比对中..." : "比对知识库"}
+        <button className={actionButtons[0].className} onClick={onCompare} disabled={!hasDocument || comparing || !selectedKnowledgeBaseFiles.length}>
+          {actionButtons[0].label}
         </button>
-        <button className="btn btn-secondary" onClick={onExport} disabled={!hasDocument || comparing}>
-          导出 Excel
+        <button className={actionButtons[1].className} onClick={onExport} disabled={!hasDocument || comparing}>
+          {actionButtons[1].label}
         </button>
+        <button className={actionButtons[2].className} onClick={handleOpenSubmitDialog} disabled={!hasDocument || comparing}>
+          {actionButtons[2].label}
+        </button>
+        {submittedForReview ? <span className="compare-panel__submitted">已提交</span> : null}
       </div>
 
       <div className="compare-panel__status">
@@ -71,13 +250,48 @@ function ComparePanel(props: ComparePanelProps) {
         <span>{progressText}</span>
       </div>
 
-      {!!logs.length && (
-        <div className="compare-panel__log">
-          {logs.slice(-8).map((line, index) => (
+      {!!visibleLogs.length && (
+        <div className="compare-panel__log" ref={setLogRef}>
+          {visibleLogs.map((line, index) => (
             <p key={`${line}-${index}`}>{line}</p>
           ))}
         </div>
       )}
+
+      {typeof document !== "undefined" && submitDialog.isOpen
+        ? createPortal(
+            <div className={submitDialog.backdropClassName} role="presentation" onClick={handleCloseSubmitDialog}>
+              <section
+                ref={submitDialogRef}
+                className={submitDialog.dialogClassName}
+                role="dialog"
+                aria-modal="true"
+                tabIndex={-1}
+                onClick={(event) => event.stopPropagation()}
+                onKeyDown={(event) => trapFocusWithinModal(event, submitDialogRef.current)}
+                onWheelCapture={(event) => event.stopPropagation()}
+              >
+                <div className="modal-card__head compare-panel__confirm-head">
+                  <div>
+                    <h4>{submitDialog.title}</h4>
+                  </div>
+                </div>
+                <div className="compare-panel__confirm-body">
+                  <p className="compare-panel__confirm-text">{submitDialog.message}</p>
+                  <div className="modal-card__actions compare-panel__confirm-actions">
+                    <button className="btn btn-lite" type="button" onClick={handleCloseSubmitDialog}>
+                      {submitDialog.cancelLabel}
+                    </button>
+                    <button className="btn btn-review" type="button" onClick={handleConfirmSubmitDialog}>
+                      {submitDialog.confirmLabel}
+                    </button>
+                  </div>
+                </div>
+              </section>
+            </div>,
+            document.body,
+          )
+        : null}
     </section>
   );
 }

@@ -1,5 +1,6 @@
 export type TypeCode = string;
 export type ResultFilterType = string;
+export type ReviewStatus = "已审" | "未审";
 
 export interface Chunk {
   chunk_id: number;
@@ -37,6 +38,7 @@ export interface ChunkCompareResult {
   categories: string[];
   matches: MatchItem[];
   label: "命中" | "其他";
+  review_status?: ReviewStatus;
 }
 
 export interface KnowledgeBaseFileSummary {
@@ -59,6 +61,17 @@ export interface KnowledgeBaseDocument {
   display_name: string;
   format: "grouped" | "flat_key_value";
   categories: KnowledgeBaseCategory[];
+}
+
+export interface DocumentReviewUpdateRequest {
+  compare_results_by_kb: Record<string, ChunkCompareResult[]>;
+  submitted_for_review: boolean;
+}
+
+export interface DocumentReviewResponse {
+  doc_id: string;
+  compare_results_by_kb: Record<string, ChunkCompareResult[]>;
+  submitted_for_review: boolean;
 }
 
 export interface KnowledgeBaseCreateRequest {

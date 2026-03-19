@@ -18,6 +18,7 @@ class SessionStore:
             chunks=chunks,
             compare_results_by_kb={},
             compare_progress_by_kb={},
+            submitted_for_review=False,
         )
         with self._lock:
             self._sessions[session.doc_id] = session
@@ -39,7 +40,44 @@ class SessionStore:
                 else:
                     next_chunks.append(chunk)
 
-            updated = session.model_copy(update={"chunks": next_chunks, "compare_results_by_kb": {}, "compare_progress_by_kb": {}})
+            updated = session.model_copy(
+                update={
+                    "chunks": next_chunks,
+                    "compare_results_by_kb": {},
+                    "compare_progress_by_kb": {},
+                    "submitted_for_review": False,
+                }
+            )
+            self._sessions[doc_id] = updated
+            return updated
+
+    def save_review_state(
+        self,
+        doc_id: str,
+        *,
+        compare_results_by_kb: dict[str, list[ChunkCompareResult]],
+        submitted_for_review: bool,
+    ) -> DocumentSession | None:
+        with self._lock:
+            session = self._sessions.get(doc_id)
+            if session is None:
+                return None
+
+            next_results_by_kb = {
+                kb_file: list(results)
+                for kb_file, results in compare_results_by_kb.items()
+            }
+            next_progress_by_kb = {
+                kb_file: self._progress_from_results(session.chunks, results)
+                for kb_file, results in next_results_by_kb.items()
+            }
+            updated = session.model_copy(
+                update={
+                    "compare_results_by_kb": next_results_by_kb,
+                    "compare_progress_by_kb": next_progress_by_kb,
+                    "submitted_for_review": submitted_for_review,
+                }
+            )
             self._sessions[doc_id] = updated
             return updated
 
@@ -62,7 +100,11 @@ class SessionStore:
             compare_progress_by_kb = dict(session.compare_progress_by_kb)
             compare_progress_by_kb[kb_file] = progress
             updated = session.model_copy(
-                update={"compare_results_by_kb": compare_results_by_kb, "compare_progress_by_kb": compare_progress_by_kb}
+                update={
+                    "compare_results_by_kb": compare_results_by_kb,
+                    "compare_progress_by_kb": compare_progress_by_kb,
+                    "submitted_for_review": False,
+                }
             )
             self._sessions[doc_id] = updated
             return updated
@@ -79,7 +121,11 @@ class SessionStore:
             compare_results_by_kb = dict(session.compare_results_by_kb)
             compare_results_by_kb[kb_file] = self._results_from_progress(session.chunks, progress)
             updated = session.model_copy(
-                update={"compare_results_by_kb": compare_results_by_kb, "compare_progress_by_kb": compare_progress_by_kb}
+                update={
+                    "compare_results_by_kb": compare_results_by_kb,
+                    "compare_progress_by_kb": compare_progress_by_kb,
+                    "submitted_for_review": False,
+                }
             )
             self._sessions[doc_id] = updated
 
@@ -110,7 +156,11 @@ class SessionStore:
             compare_results_by_kb = dict(session.compare_results_by_kb)
             compare_results_by_kb[kb_file] = self._results_from_progress(session.chunks, progress)
             updated = session.model_copy(
-                update={"compare_results_by_kb": compare_results_by_kb, "compare_progress_by_kb": compare_progress_by_kb}
+                update={
+                    "compare_results_by_kb": compare_results_by_kb,
+                    "compare_progress_by_kb": compare_progress_by_kb,
+                    "submitted_for_review": False,
+                }
             )
             self._sessions[doc_id] = updated
             return updated
@@ -153,10 +203,24 @@ class SessionStore:
             compare_results_by_kb = dict(session.compare_results_by_kb)
             compare_results_by_kb[kb_file] = self._results_from_progress(session.chunks, progress)
             updated = session.model_copy(
-                update={"compare_results_by_kb": compare_results_by_kb, "compare_progress_by_kb": compare_progress_by_kb}
+                update={
+                    "compare_results_by_kb": compare_results_by_kb,
+                    "compare_progress_by_kb": compare_progress_by_kb,
+                    "submitted_for_review": False,
+                }
             )
             self._sessions[doc_id] = updated
             return updated
+
+    @staticmethod
+    def _progress_from_results(chunks: list[Chunk], results: list[ChunkCompareResult]) -> dict[int, ChunkCompareProgress]:
+        progress: dict[int, ChunkCompareProgress] = {
+            chunk.chunk_id: ChunkCompareProgress(status="pending")
+            for chunk in chunks
+        }
+        for result in results:
+            progress[result.chunk_id] = ChunkCompareProgress(status="succeeded", result=result)
+        return progress
 
     @staticmethod
     def _build_progress_for_kb(session: DocumentSession, kb_file: str) -> dict[int, ChunkCompareProgress]:
