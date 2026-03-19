@@ -14,6 +14,7 @@ import {
   mergeChunkCompareResult,
   toggleKnowledgeBaseSelection,
 } from "./homePageCompareState";
+import { buildHomePagePaginationModel } from "./homePagePagination";
 import { normalizeReviewResult } from "./homePageReviewState";
 import type {
   Chunk,
@@ -25,6 +26,8 @@ import type {
 interface HomePageProps {
   compareKnowledgeBases: KnowledgeBaseFileSummary[];
 }
+
+const PAGE_SIZE = 10;
 
 function HomePage({ compareKnowledgeBases }: HomePageProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -38,6 +41,7 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
   const [logs, setLogs] = useState<string[]>([]);
   const [progressText, setProgressText] = useState("等待上传文件");
   const [activeFilter, setActiveFilter] = useState<ResultFilterType>("ALL");
+  const [page, setPage] = useState(1);
   const [hasPendingChunkSync, setHasPendingChunkSync] = useState(false);
   const [hasPendingReviewSync, setHasPendingReviewSync] = useState(false);
   const [submittedForReview, setSubmittedForReview] = useState(false);
@@ -80,6 +84,49 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
       return collectTypeCodes(result).includes(activeFilter);
     });
   }, [activeFilter, activeResultMap, sortedChunks]);
+  const pageModel = useMemo(
+    () => buildHomePagePaginationModel(filteredChunks, activeResultMap, page, PAGE_SIZE),
+    [activeResultMap, filteredChunks, page],
+  );
+  const currentPage = pageModel.page;
+  const totalPages = pageModel.totalPages;
+  const shouldShowPagination = chunks.length > 0;
+
+  useEffect(() => {
+    if (page !== pageModel.page) {
+      setPage(pageModel.page);
+    }
+  }, [page, pageModel.page]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeFilter, activeResultKbFile]);
+
+  function renderPaginationBar() {
+    return (
+      <section className="kb-pagination-bar">
+        <span>
+          共 {pageModel.totalItems} 条，当前第 {currentPage}/{totalPages} 页
+        </span>
+        <div className="kb-pagination-bar__actions">
+          <span>
+            已审：{pageModel.reviewedCount}/{pageModel.pageItemCount}
+          </span>
+          <button className="btn btn-lite" type="button" onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={currentPage <= 1}>
+            上一页
+          </button>
+          <button
+            className="btn btn-lite"
+            type="button"
+            onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
+            disabled={currentPage >= totalPages}
+          >
+            下一页
+          </button>
+        </div>
+      </section>
+    );
+  }
 
   function appendLog(line: string) {
     setLogs((prev) => [...prev, line]);
@@ -117,6 +164,7 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
       setSubmittedForReview(false);
       setActiveFilter("ALL");
       setActiveResultKbFile(selectedCompareKbFiles[0] ?? STANDARD_KB_FILE_NAME);
+      setPage(1);
       setProgressText(`切分完成，共 ${response.chunks.length} 段`);
       appendLog(`上传完成: ${response.source_file_name}`);
     } catch (error) {
@@ -200,6 +248,7 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
     setLogs([]);
     setSubmittedForReview(false);
     setHasPendingReviewSync(false);
+    setPage(1);
     setProgressText("正在提交编辑内容...");
 
     try {
@@ -405,8 +454,10 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
         </div>
       </section>
 
+      {shouldShowPagination ? renderPaginationBar() : null}
+
       <section className="chunks-grid">
-        {filteredChunks.map((chunk) => (
+        {pageModel.chunks.map((chunk) => (
           <ChunkCard
             key={chunk.chunk_id}
             chunk={chunk}
@@ -417,6 +468,8 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
           />
         ))}
       </section>
+
+      {shouldShowPagination ? renderPaginationBar() : null}
     </section>
   );
 }
