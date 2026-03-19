@@ -8,7 +8,7 @@ export function buildComparePanelActionButtons(comparing: boolean): ComparePanel
   return [
     {
       key: "compare",
-      label: comparing ? "比对中..." : "比对知识库",
+      label: comparing ? "智能分析中..." : "开始智能分析",
       className: "btn btn-primary compare-panel__action-btn",
     },
     {
@@ -26,6 +26,14 @@ export function buildComparePanelActionButtons(comparing: boolean): ComparePanel
 
 export function getVisibleComparePanelLogs(logs: string[]) {
   return logs;
+}
+
+export function resolveComparePanelProgressPercent(current: number, total: number) {
+  if (total <= 0 || current <= 0) {
+    return 0;
+  }
+
+  return Math.min(100, Math.max(0, Math.round((current / total) * 100)));
 }
 
 interface ComparePanelLogMetrics {

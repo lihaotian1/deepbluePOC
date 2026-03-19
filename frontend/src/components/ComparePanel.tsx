@@ -6,6 +6,7 @@ import { getComparePanelConfirmDialogState } from "./comparePanelConfirmDialogSt
 import {
   buildComparePanelActionButtons,
   getVisibleComparePanelLogs,
+  resolveComparePanelProgressPercent,
   shouldKeepComparePanelLogPinnedToBottom,
 } from "./comparePanelViewState";
 
@@ -94,6 +95,8 @@ interface ComparePanelProps {
   hasDocument: boolean;
   comparing: boolean;
   progressText: string;
+  progressCurrent: number;
+  progressTotal: number;
   logs: string[];
   knowledgeBaseOptions: KnowledgeBaseFileSummary[];
   selectedKnowledgeBaseFiles: string[];
@@ -109,6 +112,8 @@ function ComparePanel(props: ComparePanelProps) {
     hasDocument,
     comparing,
     progressText,
+    progressCurrent,
+    progressTotal,
     logs,
     knowledgeBaseOptions,
     selectedKnowledgeBaseFiles,
@@ -120,6 +125,7 @@ function ComparePanel(props: ComparePanelProps) {
   } = props;
   const actionButtons = buildComparePanelActionButtons(comparing);
   const visibleLogs = getVisibleComparePanelLogs(logs);
+  const progressPercent = resolveComparePanelProgressPercent(progressCurrent, progressTotal);
   const [isSubmitDialogOpen, setIsSubmitDialogOpen] = useState(false);
   const logRef = useRef<HTMLDivElement | null>(null);
   const submitDialogRef = useRef<HTMLElement | null>(null);
@@ -203,12 +209,12 @@ function ComparePanel(props: ComparePanelProps) {
   return (
     <section className="glass-card compare-panel">
       <div className="compare-panel__head">
-        <h2>知识库比对</h2>
-        <p>默认比对标准化配套知识库，可按需追加投标说明知识库。</p>
+        <h2>知识库智能分析</h2>
+        <p>默认使用标准化配套知识库进行智能分析，可按需追加投标说明知识库。</p>
       </div>
 
       <div className="compare-panel__selector-group">
-        <span className="compare-panel__selector-label">本次比对范围</span>
+        <span className="compare-panel__selector-label">本次智能分析范围</span>
         <div className="compare-panel__selector-list">
           {knowledgeBaseOptions.map((option) => {
             const checked = selectedKnowledgeBaseFiles.includes(option.file_name);
@@ -247,6 +253,16 @@ function ComparePanel(props: ComparePanelProps) {
 
       <div className="compare-panel__status">
         <span className="pulse-dot" />
+        <span
+          className="compare-panel__status-progress"
+          role="progressbar"
+          aria-label="智能分析进度"
+          aria-valuemin={0}
+          aria-valuemax={100}
+          aria-valuenow={progressPercent}
+        >
+          <span className="compare-panel__status-progress-fill" style={{ width: `${progressPercent}%` }} />
+        </span>
         <span>{progressText}</span>
       </div>
 

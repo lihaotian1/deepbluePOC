@@ -481,7 +481,7 @@ function ChunkCard({ chunk, result, activeKnowledgeBaseFile, onChange, onReviewC
     if (!reviewedResult) {
       return (
         <div className="chunk-result-panel__summary" ref={ref}>
-          <span className="chunk-summary-pill chunk-summary-pill--pending">待比对</span>
+          <span className="chunk-summary-pill chunk-summary-pill--pending">待智能分析</span>
         </div>
       );
     }
@@ -804,7 +804,7 @@ function ChunkCard({ chunk, result, activeKnowledgeBaseFile, onChange, onReviewC
         </div>
         <div className="chunk-panel chunk-panel--result">
           <div className="chunk-panel__head">
-            <span className="muted">知识库比对结果</span>
+            <span className="muted">知识库智能分析结果</span>
             <button className="mini-toggle" type="button" onClick={() => setExpandResult((prev) => !prev)}>
               {resultToggleText}
             </button>
@@ -884,7 +884,7 @@ function ChunkCard({ chunk, result, activeKnowledgeBaseFile, onChange, onReviewC
                 <span className="muted">可通过类型筛选按钮快速定位该段</span>
               )
             ) : (
-              <span className="muted">比对后将显示类型标签</span>
+              <span className="muted">智能分析后将显示类型标签</span>
             )}
             {compareDisplayState.state === "hit" ? <span className="result-hit">{resultTypeCodes.join(" / ")}</span> : null}
           </div>
