@@ -28,6 +28,7 @@ interface HomePageProps {
 }
 
 const PAGE_SIZE = 10;
+const INITIAL_COMPARE_PROGRESS = { current: 0, total: 0 };
 
 function HomePage({ compareKnowledgeBases }: HomePageProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -42,6 +43,7 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
   const [progressText, setProgressText] = useState("等待上传文件");
   const [activeFilter, setActiveFilter] = useState<ResultFilterType>("ALL");
   const [page, setPage] = useState(1);
+  const [compareProgress, setCompareProgress] = useState(INITIAL_COMPARE_PROGRESS);
   const [hasPendingChunkSync, setHasPendingChunkSync] = useState(false);
   const [hasPendingReviewSync, setHasPendingReviewSync] = useState(false);
   const [submittedForReview, setSubmittedForReview] = useState(false);
@@ -155,6 +157,7 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
     setProgressText("正在切分文档...");
     setLogs([]);
     setResultsByKb({});
+    setCompareProgress(INITIAL_COMPARE_PROGRESS);
     try {
       const response = await uploadDocument(selectedFile);
       setDocId(response.doc_id);
@@ -189,7 +192,8 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
       setActiveFilter(nextCompareState.activeFilter);
     }
 
-    setProgressText("章节内容已修改，历史比对结果已失效");
+    setCompareProgress(INITIAL_COMPARE_PROGRESS);
+    setProgressText("章节内容已修改，历史智能分析结果已失效");
   }
 
   function handleReviewResultChange(chunkId: number, nextResult: ChunkCompareResult) {
@@ -249,12 +253,13 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
     setSubmittedForReview(false);
     setHasPendingReviewSync(false);
     setPage(1);
+    setCompareProgress(INITIAL_COMPARE_PROGRESS);
     setProgressText("正在提交编辑内容...");
 
     try {
       await patchChunks(docId, chunks);
       setHasPendingChunkSync(false);
-      appendLog("编辑内容已保存，开始流式比对...");
+      appendLog("编辑内容已保存，开始流式智能分析...");
       await streamCompare(
         docId,
         selectedCompareKbFiles,
@@ -268,7 +273,8 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
             const index = Number(eventPayload.index || 0);
             const total = Number(eventPayload.total || 0);
             const heading = String(eventPayload.heading || "");
-            setProgressText(`${kbDisplayName} 比对进行中: ${index}/${total}`);
+            setCompareProgress({ current: index, total });
+            setProgressText(`${kbDisplayName} 智能分析进行中: ${index}/${total}`);
             appendLog(`${logPrefix}开始处理第 ${index}/${total} 段: ${heading}`);
             return;
           }
@@ -305,8 +311,12 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
           }
 
           if (eventName === "compare_done") {
-            setProgressText(`比对完成，共处理 ${selectedCompareKbFiles.length} 个知识库`);
-            appendLog("全部章节比对完成");
+            setCompareProgress((currentProgress) => ({
+              current: currentProgress.total,
+              total: currentProgress.total,
+            }));
+            setProgressText(`智能分析完成，共处理 ${selectedCompareKbFiles.length} 个知识库`);
+            appendLog("全部章节智能分析完成");
           }
         },
         (message) => {
@@ -319,8 +329,9 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
         },
       );
     } catch (error) {
-      setProgressText("比对失败，请稍后重试");
-      appendLog(`比对失败: ${String(error)}`);
+      setCompareProgress(INITIAL_COMPARE_PROGRESS);
+      setProgressText("智能分析失败，请稍后重试");
+      appendLog(`智能分析失败: ${String(error)}`);
     } finally {
       setComparing(false);
     }
@@ -335,7 +346,8 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
         setProgressText("正在保存编辑内容...");
         await patchChunks(docId, chunks);
         setHasPendingChunkSync(false);
-        appendLog("编辑内容已保存，历史比对结果已清除");
+        setCompareProgress(INITIAL_COMPARE_PROGRESS);
+        appendLog("编辑内容已保存，历史智能分析结果已清除");
       }
 
       if (hasPendingReviewSync) {
@@ -404,6 +416,8 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
         hasDocument={Boolean(docId)}
         comparing={comparing}
         progressText={progressText}
+        progressCurrent={compareProgress.current}
+        progressTotal={compareProgress.total}
         logs={logs}
         knowledgeBaseOptions={compareOptions}
         selectedKnowledgeBaseFiles={selectedCompareKbFiles}
@@ -418,7 +432,7 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
         <div className="filter-panel__head">
           <div>
             <h3>类型筛选</h3>
-            {selectedCompareKbFiles.length > 1 ? <p>当前展示 {resolveKnowledgeBaseDisplayName(activeResultKbFile)} 的比对结果</p> : null}
+            {selectedCompareKbFiles.length > 1 ? <p>当前展示 {resolveKnowledgeBaseDisplayName(activeResultKbFile)} 的智能分析结果</p> : null}
           </div>
 
           {selectedCompareKbFiles.length > 1 ? (

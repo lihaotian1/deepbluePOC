@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   buildComparePanelActionButtons,
   getVisibleComparePanelLogs,
+  resolveComparePanelProgressPercent,
   shouldKeepComparePanelLogPinnedToBottom,
 } from "../src/components/comparePanelViewState.ts";
 
@@ -22,6 +23,14 @@ test("submit review uses a distinct visual variant from export", () => {
   assert.ok(exportButton);
   assert.ok(submitButton);
   assert.notEqual(exportButton?.className, submitButton?.className);
+});
+
+test("compare panel primary action uses smart-analysis wording", () => {
+  const idleButton = buildComparePanelActionButtons(false).find((button) => button.key === "compare");
+  const runningButton = buildComparePanelActionButtons(true).find((button) => button.key === "compare");
+
+  assert.equal(idleButton?.label, "开始智能分析");
+  assert.equal(runningButton?.label, "智能分析中...");
 });
 
 test("compare panel keeps the complete log history visible to the scroll area", () => {
@@ -50,4 +59,18 @@ test("compare panel respects manual scrolling away from the bottom", () => {
     }),
     false,
   );
+});
+
+test("compare panel progress percent stays at zero without a valid total", () => {
+  assert.equal(resolveComparePanelProgressPercent(0, 0), 0);
+  assert.equal(resolveComparePanelProgressPercent(3, 0), 0);
+});
+
+test("compare panel progress percent reflects active chunk progress", () => {
+  assert.equal(resolveComparePanelProgressPercent(2, 5), 40);
+});
+
+test("compare panel progress percent caps at one hundred", () => {
+  assert.equal(resolveComparePanelProgressPercent(5, 5), 100);
+  assert.equal(resolveComparePanelProgressPercent(8, 5), 100);
 });
