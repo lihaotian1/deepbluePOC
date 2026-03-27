@@ -31,6 +31,7 @@ class MatcherService:
 
         output: list[tuple[ChunkCompareResult, list[dict]]] = []
         categories_set = set(self.kb.categories)
+        category_contexts = _build_category_contexts(self.kb)
         for chunk_batch in _iter_batches(chunks, batch_size):
             batch_payload = [(chunk.chunk_id, chunk.content) for chunk in chunk_batch]
             sentence_map = {
@@ -40,6 +41,7 @@ class MatcherService:
             classified_map = await self.llm.classify_categories_batch(
                 chunks=batch_payload,
                 category_keys=self.kb.categories,
+                category_contexts=category_contexts,
             )
 
             normalized_map: dict[int, list[str]] = {}
@@ -170,6 +172,39 @@ def _build_match_chunk_payload(chunk: Chunk, sentences: list[str]) -> dict[str, 
             for index, sentence in enumerate(sentences)
         ],
     }
+
+
+def _build_category_contexts(kb: KnowledgeBase, sample_limit: int = 3) -> list[dict[str, object]]:
+    contexts: list[dict[str, object]] = []
+    for category in kb.categories:
+        sample_entries = _select_representative_entry_texts(kb.by_category(category), sample_limit)
+        contexts.append({"category": category, "sample_entries": sample_entries})
+    return contexts
+
+
+def _select_representative_entry_texts(entries, sample_limit: int) -> list[str]:
+    if sample_limit <= 0 or not entries:
+        return []
+    if len(entries) <= sample_limit:
+        return [entry.text for entry in entries]
+    if sample_limit == 1:
+        return [entries[0].text]
+
+    last_index = len(entries) - 1
+    selected_indices: list[int] = []
+    for position in range(sample_limit):
+        candidate_index = round(position * last_index / (sample_limit - 1))
+        if selected_indices and candidate_index <= selected_indices[-1]:
+            candidate_index = selected_indices[-1] + 1
+
+        remaining_slots = sample_limit - position - 1
+        max_index = last_index - remaining_slots
+        if candidate_index > max_index:
+            candidate_index = max_index
+
+        selected_indices.append(candidate_index)
+
+    return [entries[index].text for index in selected_indices]
 
 
 def _sanitize_evidence(sentences: list[str], row: dict) -> tuple[int | None, str]:

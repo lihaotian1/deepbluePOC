@@ -12,7 +12,7 @@ from app.services.knowledge_base_manager import KnowledgeBaseManager
 
 
 class FakeLLM:
-    async def classify_categories_batch(self, *, chunks, category_keys):
+    async def classify_categories_batch(self, *, chunks, category_keys, category_contexts=None):
         preferred_category = "非强制-报价行动" if "非强制-报价行动" in category_keys else category_keys[0]
         return {chunk_id: [preferred_category] for chunk_id, _ in chunks}
 
@@ -90,7 +90,7 @@ class FlakyBatchLLM:
     def __init__(self) -> None:
         self.calls = 0
 
-    async def classify_categories_batch(self, *, chunks, category_keys):
+    async def classify_categories_batch(self, *, chunks, category_keys, category_contexts=None):
         return {chunk_id: [category_keys[0]] for chunk_id, _ in chunks}
 
     async def match_items_batch(self, *, category, entries, chunks):
@@ -117,7 +117,7 @@ class ResumeAwareLLM:
         self.remaining_failures_by_chunk: dict[int, int] = {2: 2}
         self.seen_chunk_ids: list[int] = []
 
-    async def classify_categories_batch(self, *, chunks, category_keys):
+    async def classify_categories_batch(self, *, chunks, category_keys, category_contexts=None):
         return {chunk_id: [category_keys[0]] for chunk_id, _ in chunks}
 
     async def match_items_batch(self, *, category, entries, chunks):

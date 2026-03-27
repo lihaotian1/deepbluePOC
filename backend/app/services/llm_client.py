@@ -22,10 +22,20 @@ class OpenAICompatibleMatcherLLM:
         self.model = model
         self.timeout = timeout
 
-    async def classify_categories(self, *, chunk_text: str, category_keys: list[str]) -> list[str]:
+    async def classify_categories(
+        self,
+        *,
+        chunk_text: str,
+        category_keys: list[str],
+        category_contexts: Sequence[dict[str, object]] | None = None,
+    ) -> list[str]:
         if not self.api_key:
             return []
-        messages = build_category_messages(chunk_text=chunk_text, category_keys=category_keys)
+        messages = build_category_messages(
+            chunk_text=chunk_text,
+            category_keys=category_keys,
+            category_contexts=category_contexts,
+        )
         payload = await self._chat_json(messages)
         categories = payload.get("categories")
         if not isinstance(categories, list):
@@ -39,12 +49,17 @@ class OpenAICompatibleMatcherLLM:
         *,
         chunks: list[tuple[int, str]],
         category_keys: list[str],
+        category_contexts: Sequence[dict[str, object]] | None = None,
     ) -> dict[int, list[str]]:
         _validate_unique_requested_chunk_ids(chunks)
         if not self.api_key:
             return {chunk_id: [] for chunk_id, _ in chunks}
 
-        messages = build_batch_category_messages(chunks=chunks, category_keys=category_keys)
+        messages = build_batch_category_messages(
+            chunks=chunks,
+            category_keys=category_keys,
+            category_contexts=category_contexts,
+        )
         payload = await self._chat_json(messages)
         raw_results = payload.get("results")
         if not isinstance(raw_results, list):

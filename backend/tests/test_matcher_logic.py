@@ -8,8 +8,13 @@ from app.schemas import Chunk
 from app.services import llm_client as llm_client_module
 from app.services.kb_loader import KnowledgeBase, KnowledgeEntry, load_tender_instruction_knowledge_base
 from app.services.llm_client import OpenAICompatibleMatcherLLM
-from app.services.matcher_service import MatcherService, _split_sentences
-from app.services.prompt_builder import build_batch_item_messages
+from app.services.matcher_service import MatcherService, _build_category_contexts, _split_sentences
+from app.services.prompt_builder import (
+    build_batch_category_messages,
+    build_batch_item_messages,
+    build_category_messages,
+    build_item_messages,
+)
 
 
 class FakeLLM:
@@ -17,6 +22,7 @@ class FakeLLM:
         self._categories_by_chunk = categories_by_chunk
         self._hits_by_chunk_and_category = hits_by_chunk_and_category
         self.classify_batch_calls = 0
+        self.classify_batch_category_contexts = []
         self.match_batch_calls = 0
         self.match_batch_chunks = []
 
@@ -26,8 +32,9 @@ class FakeLLM:
     async def match_items(self, *, chunk_text, category, entries):
         return []
 
-    async def classify_categories_batch(self, *, chunks, category_keys):
+    async def classify_categories_batch(self, *, chunks, category_keys, category_contexts=None):
         self.classify_batch_calls += 1
+        self.classify_batch_category_contexts.append(category_contexts)
         output = {}
         for chunk_id, _ in chunks:
             output[chunk_id] = self._categories_by_chunk.get(chunk_id, [])
@@ -106,6 +113,30 @@ def _build_kb() -> KnowledgeBase:
         ),
     ]
     return KnowledgeBase(entries=entries)
+
+
+def test_build_category_contexts_spreads_samples_across_large_categories() -> None:
+    kb = KnowledgeBase(
+        entries=[
+            KnowledgeEntry(
+                entry_id=f"分类A-{index}",
+                category="分类A",
+                text=f"样本{index}",
+                type_code="P",
+                raw_value="P",
+            )
+            for index in range(1, 6)
+        ]
+    )
+
+    contexts = _build_category_contexts(kb, sample_limit=3)
+
+    assert contexts == [
+        {
+            "category": "分类A",
+            "sample_entries": ["样本1", "样本3", "样本5"],
+        }
+    ]
 
 
 def test_matcher_marks_other_when_no_category_hit() -> None:
@@ -513,6 +544,133 @@ def test_batch_item_prompt_includes_sentences_and_indexed_evidence_fields() -> N
     ]
 
 
+def test_batch_category_prompt_includes_deepblue_requirement_context_and_samples() -> None:
+    messages = build_batch_category_messages(
+        chunks=[(1, "泵组应符合 API 610 要求")],
+        category_keys=["分类A", "分类B"],
+        category_contexts=[
+            {
+                "category": "分类A",
+                "sample_entries": ["符合API 610", "满足防爆要求"],
+            },
+            {
+                "category": "分类B",
+                "sample_entries": ["其他要求"],
+            },
+        ],
+    )
+
+    assert "询价文件中对深蓝公司的要求" in messages[0]["content"]
+    assert "深蓝公司在知识库中已有、能够提供的能力与内容" in messages[0]["content"]
+    assert "category_contexts" in messages[0]["content"]
+
+    user_payload = json.loads(messages[1]["content"])
+
+    assert user_payload["chunks_background"] == "chunks 是询价文件中对深蓝公司的要求原文。"
+    assert user_payload["category_contexts_background"] == (
+        "category_contexts 是深蓝公司知识库中的分类及样本条目，表示深蓝公司能够提供的内容。"
+    )
+    assert user_payload["category_contexts"] == [
+        {
+            "category": "分类A",
+            "sample_entries": ["符合API 610", "满足防爆要求"],
+        },
+        {
+            "category": "分类B",
+            "sample_entries": ["其他要求"],
+        },
+    ]
+
+
+def test_single_category_prompt_includes_deepblue_requirement_context_and_samples() -> None:
+    messages = build_category_messages(
+        chunk_text="泵组应符合 API 610 要求",
+        category_keys=["分类A"],
+        category_contexts=[
+            {
+                "category": "分类A",
+                "sample_entries": ["符合API 610", "满足防爆要求"],
+            }
+        ],
+    )
+
+    assert "询价文件中对深蓝公司的要求" in messages[0]["content"]
+
+    user_payload = json.loads(messages[1]["content"])
+
+    assert user_payload["chunk_background"] == "chunk 是询价文件中对深蓝公司的要求原文。"
+    assert user_payload["category_contexts"] == [
+        {
+            "category": "分类A",
+            "sample_entries": ["符合API 610", "满足防爆要求"],
+        }
+    ]
+
+
+def test_matcher_forwards_category_context_samples_to_batch_classification() -> None:
+    llm = FakeLLM(
+        categories_by_chunk={3: ["分类A"]},
+        hits_by_chunk_and_category={(3, "分类A"): [{"entry_id": "分类A-1", "reason": "命中"}]},
+    )
+    matcher = MatcherService(kb=_build_kb(), llm=llm)
+    chunk = Chunk(chunk_id=3, source="demo.pdf", heading="3", level=1, line_no=3, content="需满足 API 610")
+
+    result = asyncio.run(matcher.compare_chunk(chunk))
+
+    assert result.label == "命中"
+    assert llm.classify_batch_category_contexts == [
+        [
+            {
+                "category": "分类A",
+                "sample_entries": ["符合API 610", "满足防爆要求"],
+            },
+            {
+                "category": "分类B",
+                "sample_entries": ["其他要求"],
+            },
+        ]
+    ]
+
+
+def test_batch_item_prompt_describes_deepblue_candidates_as_response_content() -> None:
+    messages = build_batch_item_messages(
+        category="分类A",
+        entries=_build_kb().by_category("分类A"),
+        chunks=[(4, "泵组应满足防爆要求")],
+    )
+
+    assert "询价文件中对深蓝公司的要求" in messages[0]["content"]
+    assert "deepblue" not in messages[0]["content"].lower()
+    assert "深蓝公司在该分类下能够提供的具体能力、方案或响应内容" in messages[0]["content"]
+    assert "禁止输出输入中不存在的 chunk_id 或 entry_id" in messages[0]["content"]
+
+    user_payload = json.loads(messages[1]["content"])
+
+    assert user_payload["chunks_background"] == "chunks 是询价文件中对深蓝公司的要求原文。"
+    assert user_payload["category_background"] == "category 是已判定可关联的深蓝公司能力分类。"
+    assert user_payload["candidates_background"] == (
+        "candidates 是深蓝公司在该分类下能够提供的具体能力、方案或响应内容。"
+    )
+
+
+def test_single_item_prompt_describes_deepblue_candidates_as_response_content() -> None:
+    messages = build_item_messages(
+        chunk_text="泵组应满足防爆要求",
+        category="分类A",
+        entries=_build_kb().by_category("分类A"),
+    )
+
+    assert "询价文件中对深蓝公司的要求" in messages[0]["content"]
+
+    user_payload = json.loads(messages[1]["content"])
+
+    assert user_payload["chunk_background"] == "chunk 是询价文件中对深蓝公司的要求原文。"
+    assert user_payload["category_background"] == "category 是已判定可关联的深蓝公司能力分类。"
+    assert user_payload["candidates_background"] == (
+        "candidates 是深蓝公司在该分类下能够提供的具体能力、方案或响应内容。"
+    )
+
+
 def test_batch_item_prompt_derives_sentence_metadata_for_tuple_chunks() -> None:
     messages = build_batch_item_messages(
         category="分类A",
@@ -674,6 +832,25 @@ def test_classify_categories_deduplicates_valid_categories_preserving_order() ->
     result = asyncio.run(llm.classify_categories(chunk_text="abc", category_keys=["分类A", "分类B"]))
 
     assert result == ["分类A", "分类B"]
+
+
+def test_classify_categories_accepts_category_contexts() -> None:
+    llm = StubChatMatcherLLM(payload={"categories": ["分类A"]})
+
+    result = asyncio.run(
+        llm.classify_categories(
+            chunk_text="abc",
+            category_keys=["分类A"],
+            category_contexts=[
+                {
+                    "category": "分类A",
+                    "sample_entries": ["符合API 610", "满足防爆要求"],
+                }
+            ],
+        )
+    )
+
+    assert result == ["分类A"]
 
 
 def test_classify_categories_batch_ignores_chunk_ids_not_in_input() -> None:
