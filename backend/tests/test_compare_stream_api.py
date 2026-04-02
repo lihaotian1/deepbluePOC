@@ -29,7 +29,7 @@ class FakeLLM:
             output[chunk_id] = [
                 {
                     "entry_id": entries[0].entry_id,
-                    "reason": "语义一致",
+                    "reason": "直接支持：语义一致",
                     "evidence_sentence_index": 9,
                     "evidence_sentence_text": evidence_text,
                 }
@@ -86,6 +86,45 @@ def test_compare_stream_returns_sse_events_for_selected_knowledge_bases_in_order
     assert "event: compare_done" in body
 
 
+def test_compare_stream_recovers_hits_via_fallback_matching_when_classification_is_empty(tmp_path: Path) -> None:
+    kb_dir = tmp_path / "知识库"
+    kb_dir.mkdir(parents=True, exist_ok=True)
+    (kb_dir / STANDARD_KB_FILE_NAME).write_text(
+        json.dumps(
+            {
+                "分类A": [{"不相关条目": "P"}],
+                "分类B": [{"这是正文。": "P"}],
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+    app = create_app()
+    app.state.knowledge_base_manager = KnowledgeBaseManager(kb_dir)
+    app.state.matcher_llm = FallbackRecoveringLLM()
+    client = TestClient(app)
+
+    content = "1 总则\n这是正文。\n"
+    upload_resp = client.post(
+        "/api/v1/documents/upload",
+        files={"file": ("demo.md", content.encode("utf-8"), "text/markdown")},
+    )
+    doc_id = upload_resp.json()["doc_id"]
+
+    with client.stream(
+        "POST",
+        f"/api/v1/documents/{doc_id}/compare/stream",
+        json={"knowledge_base_files": [STANDARD_KB_FILE_NAME]},
+    ) as response:
+        assert response.status_code == 200
+        body = "".join(response.iter_text())
+
+    assert '"category":"分类B"' in body
+    assert '"reason":"直接支持：fallback recovered"' in body
+    assert '"label":"命中"' in body
+
+
 class FlakyBatchLLM:
     def __init__(self) -> None:
         self.calls = 0
@@ -104,11 +143,32 @@ class FlakyBatchLLM:
             output[chunk_id] = [
                 {
                     "entry_id": entries[0].entry_id,
-                    "reason": "重试后成功",
+                    "reason": "直接支持：重试后成功",
                     "evidence_sentence_index": 0,
                     "evidence_sentence_text": "这是正文。",
                 }
             ]
+        return output
+
+
+class FallbackRecoveringLLM:
+    async def classify_categories_batch(self, *, chunks, category_keys, category_contexts=None):
+        return {chunk_id: [] for chunk_id, _ in chunks}
+
+    async def match_items_batch(self, *, category, entries, chunks):
+        output = {}
+        for chunk in chunks:
+            chunk_id = chunk["chunk_id"] if isinstance(chunk, dict) else chunk[0]
+            output[chunk_id] = []
+            if category == "分类B":
+                output[chunk_id].append(
+                    {
+                        "entry_id": entries[0].entry_id,
+                        "reason": "直接支持：fallback recovered",
+                        "evidence_sentence_index": 0,
+                        "evidence_sentence_text": "这是正文。",
+                    }
+                )
         return output
 
 
@@ -132,7 +192,7 @@ class ResumeAwareLLM:
             output[chunk_id] = [
                 {
                     "entry_id": entries[0].entry_id,
-                    "reason": f"chunk {chunk_id} success",
+                    "reason": f"直接支持：chunk {chunk_id} success",
                     "evidence_sentence_index": 0,
                     "evidence_sentence_text": f"chunk {chunk_id}",
                 }

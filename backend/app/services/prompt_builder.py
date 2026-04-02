@@ -21,6 +21,9 @@ def build_category_messages(
         "输入的 category_contexts 是深蓝公司在知识库中已有、能够提供的能力与内容，其中包含分类及样本条目。"
         "请根据语义判断：如果原文要求能够被某个分类下深蓝公司可提供的内容覆盖、满足或响应，则记录该分类。"
         "不要只看字面重合，要判断该分类是否真的能用于响应原文要求。"
+        "判断时优先看同一对象、同一能力点或交付物、同一限制条件，而不是泛泛的主题相似。"
+        "如果某分类下的内容与原文形成直接支持、条件支持，或强关联但存在冲突，均可记录该分类，表示该分类与原文存在可分析的相关性。"
+        "仅主题接近但对象或限制条件不一致时不要输出。"
         "只返回 JSON 对象：{\"categories\": [string, ...]}。"
         "如果都不匹配则返回空数组。"
         "禁止输出输入中不存在的 category。"
@@ -34,7 +37,7 @@ def build_category_messages(
             "category_contexts 是深蓝公司知识库中的分类及样本条目，表示深蓝公司能够提供的内容。"
         ),
         "category_contexts": normalized_contexts,
-        "rule": "按“深蓝公司可提供内容是否能覆盖、满足或响应原文要求”进行语义判断，可多选。禁止输出输入中不存在的 category。",
+        "rule": "按“深蓝公司可提供内容是否能覆盖、满足或响应原文要求”进行语义判断，可多选。优先判断同一对象、同一能力点或交付物、同一限制条件；强关联但存在冲突的分类也可保留；仅主题接近但对象或限制条件不一致时不要输出。禁止输出输入中不存在的 category。",
     }
     return [
         {"role": "system", "content": system_prompt},
@@ -50,6 +53,11 @@ def build_item_messages(*, chunk_text: str, category: str, entries: list[Knowled
         "输入的 candidates 是深蓝公司在该分类下能够提供的具体能力、方案或响应内容。"
         "请根据语义判断：哪些候选条目可以用于响应、满足或支撑原文要求。"
         "不要只看字面重合，要判断候选条目是否真的能支持深蓝公司响应该要求。"
+        "判断时优先看同一对象、同一能力点或交付物、同一限制条件。"
+        "请将候选条目区分为：直接支持、条件支持、强关联但冲突、仅主题相近但不足以判断。"
+        "直接支持、条件支持、强关联但冲突都可以命中，其中强关联但冲突作为弱命中保留。"
+        "仅主题相近但不足以判断时不要命中。"
+        "reason 需明确说明属于直接支持、条件支持或强关联但冲突，且必须以“直接支持：”“条件支持：”或“强关联但冲突：”开头。"
         "只返回 JSON 对象：{\"matches\": [{\"entry_id\": string, \"reason\": string}, ...]}。"
         "无匹配返回空数组。"
         "禁止输出输入中不存在的 entry_id。"
@@ -68,7 +76,7 @@ def build_item_messages(*, chunk_text: str, category: str, entries: list[Knowled
             }
             for item in entries
         ],
-        "rule": "按“深蓝公司可提供内容是否能响应、满足或支撑原文要求”进行语义判断，可多选。禁止输出输入中不存在的 entry_id。",
+        "rule": "按“深蓝公司可提供内容是否能响应、满足或支撑原文要求”进行语义判断，可多选。优先判断同一对象、同一能力点或交付物、同一限制条件；强关联但冲突的候选条目也可保留；仅主题相近但不足以判断时不要命中。reason 需明确说明属于直接支持、条件支持或强关联但冲突，且必须以“直接支持：”“条件支持：”或“强关联但冲突：”开头。禁止输出输入中不存在的 entry_id。",
     }
     return [
         {"role": "system", "content": system_prompt},
@@ -91,6 +99,9 @@ def build_batch_category_messages(
         "输入的 category_contexts 是深蓝公司在知识库中已有、能够提供的能力与内容，其中包含分类及样本条目。"
         "请逐段判断：如果某段原文要求能够被某个分类下深蓝公司可提供的内容覆盖、满足或响应，则记录该分类。"
         "不要只看字面重合，要判断该分类是否真的能用于响应原文要求。"
+        "判断时优先看同一对象、同一能力点或交付物、同一限制条件，而不是泛泛的主题相似。"
+        "如果某分类下的内容与原文形成直接支持、条件支持，或强关联但存在冲突，均可记录该分类，表示该分类与原文存在可分析的相关性。"
+        "仅主题接近但对象或限制条件不一致时不要输出。"
         "只返回 JSON：{\"results\":[{\"chunk_id\":int,\"categories\":[string,...]}]}。"
         "如果某段无匹配分类，categories 为空数组。"
         "禁止输出输入中不存在的 chunk_id 或 category。"
@@ -104,7 +115,7 @@ def build_batch_category_messages(
             "category_contexts 是深蓝公司知识库中的分类及样本条目，表示深蓝公司能够提供的内容。"
         ),
         "category_contexts": normalized_contexts,
-        "rule": "按“深蓝公司可提供内容是否能覆盖、满足或响应原文要求”进行语义判断，可多选。禁止输出输入中不存在的 chunk_id 或 category。",
+        "rule": "按“深蓝公司可提供内容是否能覆盖、满足或响应原文要求”进行语义判断，可多选。优先判断同一对象、同一能力点或交付物、同一限制条件；强关联但存在冲突的分类也可保留；仅主题接近但对象或限制条件不一致时不要输出。禁止输出输入中不存在的 chunk_id 或 category。",
     }
     return [
         {"role": "system", "content": system_prompt},
@@ -126,6 +137,11 @@ def build_batch_item_messages(
         "输入的 candidates 是深蓝公司在该分类下能够提供的具体能力、方案或响应内容。"
         "请根据语义判断：哪些候选条目可以用于响应、满足或支撑原文要求。"
         "不要只看字面重合，要判断候选条目是否真的能支持深蓝公司响应该要求。"
+        "判断时优先看同一对象、同一能力点或交付物、同一限制条件。"
+        "请将候选条目区分为：直接支持、条件支持、强关联但冲突、仅主题相近但不足以判断。"
+        "直接支持、条件支持、强关联但冲突都可以命中，其中强关联但冲突作为弱命中保留。"
+        "仅主题相近但不足以判断时不要命中。"
+        "reason 需明确说明属于直接支持、条件支持或强关联但冲突，且必须以“直接支持：”“条件支持：”或“强关联但冲突：”开头。"
         "只返回 JSON：{\"results\":[{\"chunk_id\":int,\"matches\":[{\"entry_id\":string,\"reason\":string,\"evidence_sentence_index\":int,\"evidence_sentence_text\":string}]}]}。"
         "每个命中都必须包含 evidence_sentence_index 和 evidence_sentence_text。"
         "evidence_sentence_index 必须引用该段提供的 sentences.index，evidence_sentence_text 必须与对应 sentences.text 一致。"
@@ -146,7 +162,7 @@ def build_batch_item_messages(
             for item in entries
         ],
         "chunks": [_build_batch_item_chunk_payload(chunk) for chunk in chunks],
-        "rule": "按“深蓝公司可提供内容是否能响应、满足或支撑原文要求”进行语义判断，可多选。禁止输出输入中不存在的 chunk_id 或 entry_id；evidence_sentence_index 必须来自对应的 sentences.index；evidence_sentence_text 必须与对应的 sentences.text 完全一致。",
+        "rule": "按“深蓝公司可提供内容是否能响应、满足或支撑原文要求”进行语义判断，可多选。优先判断同一对象、同一能力点或交付物、同一限制条件；强关联但冲突的候选条目也可保留；仅主题相近但不足以判断时不要命中。reason 需明确说明属于直接支持、条件支持或强关联但冲突，且必须以“直接支持：”“条件支持：”或“强关联但冲突：”开头。禁止输出输入中不存在的 chunk_id 或 entry_id；evidence_sentence_index 必须来自对应的 sentences.index；evidence_sentence_text 必须与对应的 sentences.text 完全一致。",
     }
     return [
         {"role": "system", "content": system_prompt},
