@@ -25,7 +25,7 @@ function UploadPanel(props: UploadPanelProps) {
           <span>{fileName ? `已选择: ${fileName}` : "选择文件"}</span>
         </label>
         <button className="btn btn-primary" onClick={onSubmit} disabled={loading || !fileName}>
-          {loading ? "切分中..." : "确定"}
+          {loading ? "上传中..." : "确定"}
         </button>
       </div>
     </section>

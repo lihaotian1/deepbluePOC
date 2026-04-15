@@ -4,7 +4,6 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
 from app.api.deps import get_session_store, get_splitter_service
 from app.schemas import (
-    ChunkUpdateRequest,
     DocumentReviewResponse,
     DocumentReviewUpdateRequest,
     DocumentUploadResponse,
@@ -25,29 +24,13 @@ async def upload_document(
     raw = await file.read()
     if not raw:
         raise HTTPException(status_code=400, detail="Empty file")
-    chunks = splitter.split_upload(file_name=file.filename or "uploaded", payload=raw)
-    session = store.create(source_file_name=file.filename or "uploaded", chunks=chunks)
+
+    document_text = splitter.extract_upload_text(file_name=file.filename or "uploaded", payload=raw)
+    session = store.create(source_file_name=file.filename or "uploaded", document_text=document_text)
     return DocumentUploadResponse(
         doc_id=session.doc_id,
         source_file_name=session.source_file_name,
-        chunks=session.chunks,
-    )
-
-
-@router.patch("/{doc_id}/chunks", response_model=DocumentUploadResponse)
-async def patch_chunks(
-    doc_id: str,
-    request: ChunkUpdateRequest,
-    store: SessionStore = Depends(get_session_store),
-) -> DocumentUploadResponse:
-    updates = {row.chunk_id: row.content for row in request.chunks}
-    session = store.update_chunks(doc_id, updates)
-    if session is None:
-        raise HTTPException(status_code=404, detail="Document session not found")
-    return DocumentUploadResponse(
-        doc_id=session.doc_id,
-        source_file_name=session.source_file_name,
-        chunks=session.chunks,
+        document_text=session.document_text,
     )
 
 
@@ -59,7 +42,7 @@ async def save_review_state(
 ) -> DocumentReviewResponse:
     session = store.save_review_state(
         doc_id,
-        compare_results_by_kb=request.compare_results_by_kb,
+        compare_rows=request.compare_rows,
         submitted_for_review=request.submitted_for_review,
     )
     if session is None:
@@ -67,6 +50,6 @@ async def save_review_state(
 
     return DocumentReviewResponse(
         doc_id=session.doc_id,
-        compare_results_by_kb=session.compare_results_by_kb,
+        compare_rows=session.compare_rows,
         submitted_for_review=session.submitted_for_review,
     )

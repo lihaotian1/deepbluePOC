@@ -12,7 +12,6 @@ test("streamCompare retries one transport failure and then succeeds", async () =
 
   await streamCompare(
     "doc-1",
-    ["标准化配套知识库.json"],
     (eventName, data) => {
       seenEvents.push({ eventName, data });
     },
@@ -28,7 +27,7 @@ test("streamCompare retries one transport failure and then succeeds", async () =
           return;
         }
 
-        handlers.onmessage?.({ event: "chunk_result", data: JSON.stringify({ chunk_id: 1 }) });
+        handlers.onmessage?.({ event: "compare_row", data: JSON.stringify({ row_id: "row-1" }) });
       },
       onRetry: (message) => {
         seenRetries.push(message);
@@ -38,7 +37,7 @@ test("streamCompare retries one transport failure and then succeeds", async () =
 
   assert.deepEqual(seenCalls, [1, 2]);
   assert.equal(seenEvents.length, 1);
-  assert.equal(seenEvents[0].eventName, "chunk_result");
+  assert.equal(seenEvents[0].eventName, "compare_row");
   assert.deepEqual(seenRetries, ["流式连接中断，正在自动重试(1/1)..."]);
   assert.deepEqual(seenErrors, ["流式处理异常: TypeError: network error"]);
 });
@@ -50,7 +49,6 @@ test("streamCompare rejects after the retry budget is exhausted", async () => {
     () =>
       streamCompare(
         "doc-1",
-        ["标准化配套知识库.json"],
         () => undefined,
         () => undefined,
         {

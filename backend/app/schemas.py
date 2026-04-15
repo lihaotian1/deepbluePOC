@@ -63,9 +63,23 @@ class ChunkCompareProgress(BaseModel):
     error_message: str = ""
 
 
+class CompareRow(BaseModel):
+    row_id: str
+    chapter_title: str
+    source_excerpt: str
+    kb_entry_id: str
+    kb_entry_text: str
+    difference_summary: str
+    type_code: Literal["P", "A", "B", "C"]
+    review_comment: str = ""
+    review_status: Literal["已审", "未审"] = "未审"
+
+
 class DocumentSession(BaseModel):
     doc_id: str
     source_file_name: str
+    document_text: str = ""
+    compare_rows: list[CompareRow] = Field(default_factory=list)
     chunks: list[Chunk] = Field(default_factory=list)
     compare_results_by_kb: dict[str, list[ChunkCompareResult]] = Field(default_factory=dict)
     compare_progress_by_kb: dict[str, dict[int, ChunkCompareProgress]] = Field(default_factory=dict)
@@ -75,17 +89,17 @@ class DocumentSession(BaseModel):
 class DocumentUploadResponse(BaseModel):
     doc_id: str
     source_file_name: str
-    chunks: list[Chunk]
+    document_text: str
 
 
 class DocumentReviewUpdateRequest(BaseModel):
-    compare_results_by_kb: dict[str, list[ChunkCompareResult]] = Field(default_factory=dict)
+    compare_rows: list[CompareRow] = Field(default_factory=list)
     submitted_for_review: bool = False
 
 
 class DocumentReviewResponse(BaseModel):
     doc_id: str
-    compare_results_by_kb: dict[str, list[ChunkCompareResult]] = Field(default_factory=dict)
+    compare_rows: list[CompareRow] = Field(default_factory=list)
     submitted_for_review: bool = False
 
 

@@ -67,6 +67,8 @@ class StubChatMatcherLLM(OpenAICompatibleMatcherLLM):
 class FakeHTTPResponse:
     def __init__(self, payload):
         self._payload = payload
+        self.status_code = 200
+        self.headers = {}
 
     def raise_for_status(self):
         return None

@@ -7,6 +7,83 @@ from app.services.kb_loader import KnowledgeEntry
 from app.services.sentence_splitter import split_sentences
 
 
+def build_document_compare_messages(
+    *,
+    document_title: str,
+    document_text: str,
+    entries: list[KnowledgeEntry],
+) -> list[dict[str, str]]:
+    system_prompt = (
+        "你是“询价文件与标准化配套条目比对助手”。"
+        "业务背景："
+        "1. 询价文件是甲方提出的采购产品要求。"
+        "2. 标准化配套知识库中的条目，是我方当前能够提供的产品标准、配置、能力或交付边界。"
+        "3. 用户使用这个功能的目的，不是单纯找差异，而是判断：我方标准化配套条目是否能满足甲方询价文件中的要求。"
+        "4. 对于不能完全满足的内容，用户需要据此与甲方做澄清。"
+        "5. 因此，只要甲方要求和我方标准化配套条目说的是同一件事，无论最终是满足、部分满足，还是有冲突，都要列出来提示给用户。"
+        "6. 不要只输出“不满足”的内容；“直接满足”的内容也要列出来，方便用户完整判断。"
+        "你的任务：基于整篇询价文件全文，与“标准化配套知识库”中的条目进行比对。"
+        "先判断甲方要求与我方标准条目是否在讨论同一件事，再判断满足程度。"
+        "判断步骤："
+        "第一步：判断是否是“同一件事”。"
+        "只有当询价文件要求与标准化配套条目在对象、事项、交付物、能力点、限制条件、适用场景上存在明确对应关系时，才算“同一件事”。"
+        "第二步：对“同一件事”的结果进行分类。"
+        "分为三类："
+        "1. 直接满足：表示我方标准条目可以直接满足甲方要求，或标准条目覆盖了甲方要求，且不存在实质性缺口。"
+        "2. 部分满足：表示我方标准条目与甲方要求说的是同一件事，但我方只能满足其中一部分，范围、数量、语言、规格、条件、交付深度等存在缺口。这类结果需要提示用户与甲方澄清。"
+        "3. 存在冲突：表示我方标准条目与甲方要求说的是同一件事，但我方标准与甲方要求相反、不兼容、明显不一致，或我方明确不能按甲方要求提供。这类结果也需要提示用户与甲方澄清。"
+        "重要规则："
+        "1. 只要是“同一件事”，就应该输出，不论最终是直接满足、部分满足，还是存在冲突。"
+        "2. 如果只是主题接近、领域接近、措辞相似，但本质上不是同一件事，不要输出。"
+        "3. 不要因为追求覆盖率而做泛化联想；但也不要因为不完全满足就不输出。"
+        "4. 你的重点不是“是否完全满足才输出”，而是“只要是同一事项，就输出并说明满足程度”。"
+        "关于一对多："
+        "1. 同一条标准化配套条目允许对应多条不同的询价要求。"
+        "2. 前提是这些询价要求描述的是不同对象、不同交付物、不同部位、不同场景或不同限制条件。"
+        "3. 如果两条询价要求本质上是同一件事的重复表达，只保留一条。"
+        "关于 source_excerpt："
+        "1. source_excerpt 必须是询价文件原文中的连续原文摘录。"
+        "2. 必须尽量精确到句子或最小必要连续段落。"
+        "3. 不要返回整个章节，除非整段本身就是表达该要求的最小必要单位。"
+        "4. source_excerpt 必须与 document_text 原文一致，不得改写、翻译或总结。"
+        "关于 chapter_title："
+        "1. chapter_title 由你根据 document_text 自行判断。"
+        "2. 优先返回与 source_excerpt 最近、最明确的章节标题。"
+        "3. 如果无法可靠识别，返回“未识别标题”。"
+        "关于 difference_summary："
+        "1. difference_summary 必须使用简体中文。"
+        "2. difference_summary 必须以以下三种前缀之一开头：直接满足：、部分满足：、存在冲突：。"
+        "3. 然后用 1 到 2 句话清楚说明原因。"
+        "4. 如果是“部分满足”或“存在冲突”，必须明确指出缺口、限制或冲突点，让用户能据此与甲方澄清。"
+        "5. 不要写空话，不要只复述原文。"
+        "6. 不要写“可能”“疑似”“大概”等不确定措辞。"
+        "输出要求："
+        "1. 只返回 JSON。"
+        "2. 不要输出任何额外解释。"
+        "3. 返回格式固定为："
+        "{\"results\":[{\"entry_id\":\"string\",\"chapter_title\":\"string\",\"source_excerpt\":\"string\",\"difference_summary\":\"string\"}]}"
+        "4. 如果没有任何“同一件事”的对应项，返回 {\"results\":[]}。"
+        "5. 禁止输出 kb_entries 中不存在的 entry_id。"
+        "6. 相同的 entry_id + 相同的 source_excerpt 只能输出一次。"
+    )
+    user_payload = {
+        "document_title": document_title,
+        "document_text": document_text,
+        "kb_entries": [
+            {
+                "entry_id": item.entry_id,
+                "text": item.text,
+                "type_code": item.type_code,
+            }
+            for item in entries
+        ],
+    }
+    return [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
+    ]
+
+
 def build_category_messages(
     *,
     chunk_text: str,

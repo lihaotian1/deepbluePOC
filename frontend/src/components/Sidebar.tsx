@@ -19,7 +19,7 @@ function Sidebar(props: SidebarProps) {
     onSelectKnowledgeBase,
   } = props;
 
-  const showKnowledgeList = currentPage === "knowledge-base";
+  const showKnowledgeList = currentPage === "knowledge-base" && kbFiles.length > 0;
 
   return (
     <aside className="app-sidebar">

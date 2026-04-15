@@ -2,121 +2,66 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  STANDARD_KB_FILE_NAME,
-  TENDER_KB_FILE_NAME,
-  buildFilterModelForKnowledgeBase,
-  invalidateCompareStateAfterChunkEdit,
-  mergeChunkCompareResult,
-  toggleKnowledgeBaseSelection,
+  buildTypeFilterModel,
+  filterCompareRowsByType,
+  mergeCompareRow,
 } from "../src/pages/homePageCompareState.ts";
-import type { ChunkCompareResult } from "../src/types";
+import type { CompareRow } from "../src/types";
 
-
-function buildResult(chunkId: number, typeCode = "P", category = "分类A"): ChunkCompareResult {
+function buildRow(rowId: string, typeCode: CompareRow["type_code"]): CompareRow {
   return {
-    chunk_id: chunkId,
-    heading: `Chunk ${chunkId}`,
-    content: "original",
-    categories: [category],
-    matches: [
-      {
-        entry_id: `kb-${chunkId}`,
-        category,
-        text: "符合 API 610",
-        type_code: typeCode,
-        reason: "命中原句",
-        evidence_sentence_index: 0,
-        evidence_sentence_text: "original",
-      },
-    ],
-    label: "命中",
+    row_id: rowId,
+    chapter_title: "1 总则",
+    source_excerpt: `source-${rowId}`,
+    kb_entry_id: `kb-${rowId}`,
+    kb_entry_text: "标准条目",
+    difference_summary: "部分满足：需要澄清。",
+    type_code: typeCode,
+    review_comment: "",
+    review_status: "未审",
   };
 }
 
+test("type filters keep ALL P A B C ordering and never expose OTHER", () => {
+  const model = buildTypeFilterModel([
+    buildRow("row-1", "P"),
+    buildRow("row-2", "A"),
+    buildRow("row-3", "C"),
+  ]);
 
-test("editing a chunk clears stale compare state", () => {
-  const state = invalidateCompareStateAfterChunkEdit({
-    resultsByKb: {
-      [STANDARD_KB_FILE_NAME]: {
-        1: buildResult(1),
-        2: buildResult(2),
-      },
-      [TENDER_KB_FILE_NAME]: {
-        1: buildResult(1, "非强制-报价行动", "非强制-报价行动"),
-      },
-    },
-    activeFilter: "P",
-  });
-
-  assert.deepEqual(state.resultsByKb, {});
-  assert.equal(state.activeFilter, "ALL");
-});
-
-
-test("editing with no compare results keeps the filter stable", () => {
-  const state = invalidateCompareStateAfterChunkEdit({
-    resultsByKb: {},
-    activeFilter: "ALL",
-  });
-
-  assert.deepEqual(state.resultsByKb, {});
-  assert.equal(state.activeFilter, "ALL");
-});
-
-
-test("standard knowledge-base filters keep P/A/B/C ordering", () => {
-  const model = buildFilterModelForKnowledgeBase(STANDARD_KB_FILE_NAME, {
-    1: buildResult(1, "P"),
-    2: buildResult(2, "A"),
-    3: {
-      ...buildResult(3, "P"),
-      matches: [],
-      categories: [],
-      label: "其他",
-    },
-  }, 3);
-
-  assert.deepEqual(model.order, ["ALL", "P", "A", "B", "C", "OTHER"]);
-  assert.equal(model.labels.P, "P");
+  assert.deepEqual(model.order, ["ALL", "P", "A", "B", "C"]);
+  assert.equal(model.counts.ALL, 3);
   assert.equal(model.counts.P, 1);
   assert.equal(model.counts.A, 1);
-  assert.equal(model.counts.OTHER, 1);
+  assert.equal(model.counts.B, 0);
+  assert.equal(model.counts.C, 1);
+  assert.equal("OTHER" in model.counts, false);
 });
 
+test("filterCompareRowsByType returns all rows for ALL and exact type matches otherwise", () => {
+  const rows = [
+    buildRow("row-1", "P"),
+    buildRow("row-2", "A"),
+    buildRow("row-3", "P"),
+  ];
 
-test("tender knowledge-base filters expose fixed display labels including zero-count required deviation", () => {
-  const model = buildFilterModelForKnowledgeBase(TENDER_KB_FILE_NAME, {
-    1: buildResult(1, "非强制-报价行动", "非强制-报价行动"),
-    2: buildResult(2, "强制-澄清", "强制-澄清"),
-  }, 2);
-
-  assert.deepEqual(model.order, ["ALL", "强制-必须偏离", "强制-澄清", "非强制-报价参考", "非强制-报价行动", "OTHER"]);
-  assert.equal(model.labels["强制-必须偏离"], "强制-必须偏离");
-  assert.equal(model.counts["强制-必须偏离"], 0);
-  assert.equal(model.counts["强制-澄清"], 1);
-  assert.equal(model.counts["非强制-报价行动"], 1);
+  assert.equal(filterCompareRowsByType(rows, "ALL").length, 3);
+  assert.deepEqual(
+    filterCompareRowsByType(rows, "P").map((row) => row.row_id),
+    ["row-1", "row-3"],
+  );
 });
 
-
-test("knowledge-base selection stays locked while compare is running", () => {
-  const selected = toggleKnowledgeBaseSelection([STANDARD_KB_FILE_NAME], TENDER_KB_FILE_NAME, [STANDARD_KB_FILE_NAME, TENDER_KB_FILE_NAME], true);
-
-  assert.deepEqual(selected, [STANDARD_KB_FILE_NAME]);
-});
-
-
-test("merging a retried chunk result preserves existing completed results", () => {
-  const merged = mergeChunkCompareResult(
+test("mergeCompareRow replaces an existing row with the same row_id", () => {
+  const merged = mergeCompareRow(
+    [buildRow("row-1", "P")],
     {
-      [STANDARD_KB_FILE_NAME]: {
-        1: buildResult(1, "P"),
-      },
+      ...buildRow("row-1", "A"),
+      difference_summary: "存在冲突：需要澄清。",
     },
-    STANDARD_KB_FILE_NAME,
-    buildResult(2, "A"),
   );
 
-  assert.deepEqual(Object.keys(merged[STANDARD_KB_FILE_NAME]).map(Number).sort((a, b) => a - b), [1, 2]);
-  assert.equal(merged[STANDARD_KB_FILE_NAME][1].matches[0].type_code, "P");
-  assert.equal(merged[STANDARD_KB_FILE_NAME][2].matches[0].type_code, "A");
+  assert.equal(merged.length, 1);
+  assert.equal(merged[0]?.type_code, "A");
+  assert.equal(merged[0]?.difference_summary, "存在冲突：需要澄清。");
 });

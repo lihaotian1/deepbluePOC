@@ -44,16 +44,19 @@ class SplitterService:
         self.timeout = timeout
         self.temp_dir.mkdir(parents=True, exist_ok=True)
 
-    def split_upload(self, *, file_name: str, payload: bytes) -> list[Chunk]:
+    def extract_upload_text(self, *, file_name: str, payload: bytes) -> str:
         suffix = Path(file_name).suffix or ".txt"
         temp_file = self.temp_dir / f"{uuid4()}{suffix}"
         temp_file.write_bytes(payload)
         try:
-            text = self.extract_text_fn(temp_file)
-            raw_chunks = self._split_text(text=text, source_name=file_name)
+            return self.extract_text_fn(temp_file)
         finally:
             if temp_file.exists():
                 temp_file.unlink(missing_ok=True)
+
+    def split_upload(self, *, file_name: str, payload: bytes) -> list[Chunk]:
+        text = self.extract_upload_text(file_name=file_name, payload=payload)
+        raw_chunks = self._split_text(text=text, source_name=file_name)
 
         chunks: list[Chunk] = []
         for row in raw_chunks:

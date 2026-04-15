@@ -14,7 +14,7 @@ export interface Chunk {
 export interface UploadResponse {
   doc_id: string;
   source_file_name: string;
-  chunks: Chunk[];
+  document_text: string;
 }
 
 export interface TranslationResponse {
@@ -41,6 +41,18 @@ export interface ChunkCompareResult {
   review_status?: ReviewStatus;
 }
 
+export interface CompareRow {
+  row_id: string;
+  chapter_title: string;
+  source_excerpt: string;
+  kb_entry_id: string;
+  kb_entry_text: string;
+  difference_summary: string;
+  type_code: "P" | "A" | "B" | "C";
+  review_comment: string;
+  review_status?: ReviewStatus;
+}
+
 export interface KnowledgeBaseFileSummary {
   file_name: string;
   display_name: string;
@@ -64,13 +76,13 @@ export interface KnowledgeBaseDocument {
 }
 
 export interface DocumentReviewUpdateRequest {
-  compare_results_by_kb: Record<string, ChunkCompareResult[]>;
+  compare_rows: CompareRow[];
   submitted_for_review: boolean;
 }
 
 export interface DocumentReviewResponse {
   doc_id: string;
-  compare_results_by_kb: Record<string, ChunkCompareResult[]>;
+  compare_rows: CompareRow[];
   submitted_for_review: boolean;
 }
 
