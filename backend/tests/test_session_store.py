@@ -1,112 +1,62 @@
-from app.schemas import Chunk, ChunkCompareResult, MatchItem
+from app.schemas import CompareRow
 from app.services.session_store import SessionStore
 
 
-def build_chunk(*, chunk_id: int, content: str) -> Chunk:
-    return Chunk(
-        chunk_id=chunk_id,
-        source="demo.md",
-        heading=f"Chunk {chunk_id}",
-        level=1,
-        line_no=chunk_id,
-        content=content,
+def build_row(*, row_id: str, summary: str) -> CompareRow:
+    return CompareRow(
+        row_id=row_id,
+        chapter_title="1 总则",
+        source_excerpt="source excerpt",
+        kb_entry_id="kb-1",
+        kb_entry_text="标准条目",
+        difference_summary=summary,
+        type_code="P",
+        review_comment="",
+        review_status="未审",
     )
 
 
-def build_result(*, chunk_id: int, content: str) -> ChunkCompareResult:
-    return ChunkCompareResult(
-        chunk_id=chunk_id,
-        heading=f"Chunk {chunk_id}",
-        content=content,
-        categories=["分类A"],
-        matches=[
-            MatchItem(
-                entry_id="kb-1",
-                category="分类A",
-                text="符合 API 610",
-                type_code="P",
-                reason="命中原句",
-                evidence_sentence_index=0,
-                evidence_sentence_text=content,
-            )
-        ],
-        label="命中",
-    )
-
-
-def test_update_chunks_clears_saved_compare_results() -> None:
+def test_create_session_stores_full_document_text() -> None:
     store = SessionStore()
     session = store.create(
         source_file_name="demo.md",
-        chunks=[build_chunk(chunk_id=1, content="original"), build_chunk(chunk_id=2, content="second")],
+        document_text="1 总则\n这是正文。\n",
     )
 
-    saved = store.save_results(
+    assert session.source_file_name == "demo.md"
+    assert session.document_text == "1 总则\n这是正文。\n"
+    assert session.compare_rows == []
+
+
+def test_save_compare_rows_replaces_previous_rows_and_resets_submission_state() -> None:
+    store = SessionStore()
+    session = store.create(
+        source_file_name="demo.md",
+        document_text="1 总则\n这是正文。\n",
+    )
+
+    saved = store.save_compare_rows(
         session.doc_id,
-        "标准化配套知识库.json",
-        [build_result(chunk_id=1, content="original")],
+        [
+            build_row(row_id="row-1", summary="直接满足：标准条目可直接满足甲方要求。"),
+        ],
     )
 
     assert saved is not None
-    assert list(saved.compare_results_by_kb) == ["标准化配套知识库.json"]
-    assert len(saved.compare_results_by_kb["标准化配套知识库.json"]) == 1
+    assert len(saved.compare_rows) == 1
+    assert saved.submitted_for_review is False
 
-    updated = store.update_chunks(session.doc_id, {1: "edited"})
-
-    assert updated is not None
-    assert updated.chunks[0].content == "edited"
-    assert updated.chunks[1].content == "second"
-    assert updated.compare_results_by_kb == {}
-    persisted = store.get(session.doc_id)
-    assert persisted is not None
-    assert persisted.compare_results_by_kb == {}
-
-
-def test_save_results_tracks_each_knowledge_base_separately() -> None:
-    store = SessionStore()
-    session = store.create(
-        source_file_name="demo.md",
-        chunks=[build_chunk(chunk_id=1, content="original")],
-    )
-
-    standard_saved = store.save_results(
+    reviewed = store.save_review_state(
         session.doc_id,
-        "标准化配套知识库.json",
-        [build_result(chunk_id=1, content="original")],
-    )
-    tender_saved = store.save_results(
-        session.doc_id,
-        "投标说明知识库.json",
-        [build_result(chunk_id=1, content="original")],
-    )
-
-    assert standard_saved is not None
-    assert tender_saved is not None
-    assert set(tender_saved.compare_results_by_kb) == {"标准化配套知识库.json", "投标说明知识库.json"}
-    assert len(tender_saved.compare_results_by_kb["标准化配套知识库.json"]) == 1
-    assert len(tender_saved.compare_results_by_kb["投标说明知识库.json"]) == 1
-
-
-def test_save_review_state_replaces_results_and_submission_flag() -> None:
-    store = SessionStore()
-    session = store.create(
-        source_file_name="demo.md",
-        chunks=[build_chunk(chunk_id=1, content="original")],
-    )
-
-    reviewed_result = build_result(chunk_id=1, content="original").model_copy(update={"review_status": "已审"})
-    updated = store.save_review_state(
-        session.doc_id,
-        compare_results_by_kb={"标准化配套知识库.json": [reviewed_result]},
+        compare_rows=[
+            build_row(row_id="row-2", summary="部分满足：需要向甲方澄清。").model_copy(
+                update={"review_status": "已审", "review_comment": "已审核"}
+            )
+        ],
         submitted_for_review=True,
     )
 
-    assert updated is not None
-    assert updated.submitted_for_review is True
-    assert updated.compare_results_by_kb["标准化配套知识库.json"][0].review_status == "已审"
-
-    cleared = store.update_chunks(session.doc_id, {1: "edited"})
-
-    assert cleared is not None
-    assert cleared.compare_results_by_kb == {}
-    assert cleared.submitted_for_review is False
+    assert reviewed is not None
+    assert reviewed.submitted_for_review is True
+    assert reviewed.compare_rows[0].row_id == "row-2"
+    assert reviewed.compare_rows[0].review_status == "已审"

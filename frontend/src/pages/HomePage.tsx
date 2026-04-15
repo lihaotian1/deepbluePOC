@@ -1,234 +1,154 @@
 import { useEffect, useMemo, useState } from "react";
 
-import { exportExcel, patchChunks, saveDocumentReviewState, uploadDocument } from "../api/client";
-import { streamCompare } from "../api/sse";
-import ChunkCard from "../components/ChunkCard";
-import ComparePanel from "../components/ComparePanel";
-import UploadPanel from "../components/UploadPanel";
 import {
-  DEFAULT_COMPARE_KB_FILES,
-  STANDARD_KB_FILE_NAME,
-  buildFilterModelForKnowledgeBase,
-  collectTypeCodes,
-  invalidateCompareStateAfterChunkEdit,
-  mergeChunkCompareResult,
-  toggleKnowledgeBaseSelection,
-} from "./homePageCompareState";
-import { buildHomePagePaginationModel } from "./homePagePagination";
-import { normalizeReviewResult } from "./homePageReviewState";
-import type {
-  Chunk,
-  ChunkCompareResult,
-  KnowledgeBaseFileSummary,
-  ResultFilterType,
-} from "../types";
+  exportExcel,
+  saveDocumentReviewState,
+  translateChunkContent,
+  uploadDocument,
+} from "../api/client";
+import { streamCompare } from "../api/sse";
+import UploadPanel from "../components/UploadPanel";
+import { buildTypeFilterModel, filterCompareRowsByType, mergeCompareRow } from "./homePageCompareState";
+import {
+  markCompareRowReviewed,
+  normalizeCompareRow,
+  removeCompareRow,
+  updateCompareRowReviewComment,
+} from "./homePageReviewState";
+import type { CompareRow, ResultFilterType } from "../types";
 
-interface HomePageProps {
-  compareKnowledgeBases: KnowledgeBaseFileSummary[];
-}
 
 const PAGE_SIZE = 10;
-const INITIAL_COMPARE_PROGRESS = { current: 0, total: 0 };
 
-function HomePage({ compareKnowledgeBases }: HomePageProps) {
+function HomePage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [comparing, setComparing] = useState(false);
   const [docId, setDocId] = useState("");
-  const [chunks, setChunks] = useState<Chunk[]>([]);
-  const [resultsByKb, setResultsByKb] = useState<Record<string, Record<number, ChunkCompareResult>>>({});
-  const [selectedCompareKbFiles, setSelectedCompareKbFiles] = useState<string[]>([STANDARD_KB_FILE_NAME]);
-  const [activeResultKbFile, setActiveResultKbFile] = useState(STANDARD_KB_FILE_NAME);
-  const [logs, setLogs] = useState<string[]>([]);
-  const [progressText, setProgressText] = useState("等待上传文件");
+  const [documentText, setDocumentText] = useState("");
+  const [compareRows, setCompareRows] = useState<CompareRow[]>([]);
+  const [progressText, setProgressText] = useState("请上传文件");
   const [activeFilter, setActiveFilter] = useState<ResultFilterType>("ALL");
   const [page, setPage] = useState(1);
-  const [compareProgress, setCompareProgress] = useState(INITIAL_COMPARE_PROGRESS);
-  const [hasPendingChunkSync, setHasPendingChunkSync] = useState(false);
-  const [hasPendingReviewSync, setHasPendingReviewSync] = useState(false);
   const [submittedForReview, setSubmittedForReview] = useState(false);
+  const [hasPendingReviewSync, setHasPendingReviewSync] = useState(false);
+  const [previewExpanded, setPreviewExpanded] = useState(false);
+  const [activeRowId, setActiveRowId] = useState("");
+  const [translatedRowId, setTranslatedRowId] = useState("");
+  const [translatedText, setTranslatedText] = useState("");
+  const [translationError, setTranslationError] = useState("");
+  const [translating, setTranslating] = useState(false);
 
-  const compareOptions = useMemo(() => {
-    return DEFAULT_COMPARE_KB_FILES.map((fileName) => {
-      return compareKnowledgeBases.find((item) => item.file_name === fileName) ?? {
-        file_name: fileName,
-        display_name: fileName.replace(/\.json$/, ""),
-      };
-    });
-  }, [compareKnowledgeBases]);
+  const filterModel = useMemo(() => buildTypeFilterModel(compareRows), [compareRows]);
+  const filteredRows = useMemo(
+    () => filterCompareRowsByType(compareRows, activeFilter),
+    [activeFilter, compareRows],
+  );
+  const totalPages = Math.max(1, Math.ceil(filteredRows.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pagedRows = filteredRows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const activeRow = compareRows.find((row) => row.row_id === activeRowId) ?? null;
+  const reviewedCount = compareRows.filter((row) => normalizeCompareRow(row).review_status === "已审").length;
+  const displayExcerpt = activeRow && translatedRowId === activeRow.row_id && translatedText ? translatedText : activeRow?.source_excerpt ?? "";
 
   useEffect(() => {
-    if (selectedCompareKbFiles.includes(activeResultKbFile)) {
+    if (page !== safePage) {
+      setPage(safePage);
+    }
+  }, [page, safePage]);
+
+  useEffect(() => {
+    if (activeRow && activeRow.row_id === translatedRowId) {
       return;
     }
 
-    setActiveResultKbFile(selectedCompareKbFiles[0] ?? STANDARD_KB_FILE_NAME);
-  }, [activeResultKbFile, selectedCompareKbFiles]);
-
-  const sortedChunks = useMemo(() => [...chunks].sort((a, b) => a.chunk_id - b.chunk_id), [chunks]);
-  const activeResultMap = resultsByKb[activeResultKbFile] ?? {};
-  const filterModel = useMemo(
-    () => buildFilterModelForKnowledgeBase(activeResultKbFile, activeResultMap, sortedChunks.length),
-    [activeResultKbFile, activeResultMap, sortedChunks.length],
-  );
-
-  const filteredChunks = useMemo(() => {
-    if (activeFilter === "ALL") {
-      return sortedChunks;
-    }
-
-    return sortedChunks.filter((chunk) => {
-      const result = activeResultMap[chunk.chunk_id];
-      if (!result) {
-        return false;
-      }
-
-      return collectTypeCodes(result).includes(activeFilter);
-    });
-  }, [activeFilter, activeResultMap, sortedChunks]);
-  const pageModel = useMemo(
-    () => buildHomePagePaginationModel(filteredChunks, activeResultMap, page, PAGE_SIZE),
-    [activeResultMap, filteredChunks, page],
-  );
-  const currentPage = pageModel.page;
-  const totalPages = pageModel.totalPages;
-  const shouldShowPagination = chunks.length > 0;
-
-  useEffect(() => {
-    if (page !== pageModel.page) {
-      setPage(pageModel.page);
-    }
-  }, [page, pageModel.page]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [activeFilter, activeResultKbFile]);
-
-  function renderPaginationBar() {
-    return (
-      <section className="kb-pagination-bar">
-        <span>
-          共 {pageModel.totalItems} 条，当前第 {currentPage}/{totalPages} 页
-        </span>
-        <div className="kb-pagination-bar__actions">
-          <span>
-            已审：{pageModel.reviewedCount}/{pageModel.pageItemCount}
-          </span>
-          <button className="btn btn-lite" type="button" onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={currentPage <= 1}>
-            上一页
-          </button>
-          <button
-            className="btn btn-lite"
-            type="button"
-            onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))}
-            disabled={currentPage >= totalPages}
-          >
-            下一页
-          </button>
-        </div>
-      </section>
-    );
-  }
-
-  function appendLog(line: string) {
-    setLogs((prev) => [...prev, line]);
-  }
-
-  function resolveKnowledgeBaseDisplayName(fileName: string) {
-    return compareOptions.find((item) => item.file_name === fileName)?.display_name ?? fileName.replace(/\.json$/, "");
-  }
-
-  function handleToggleKnowledgeBase(fileName: string) {
-    setSelectedCompareKbFiles((current) =>
-      toggleKnowledgeBaseSelection(
-        current,
-        fileName,
-        compareOptions.map((item) => item.file_name),
-        comparing,
-      ),
-    );
-  }
+    setTranslatedText("");
+    setTranslationError("");
+    setTranslatedRowId("");
+    setTranslating(false);
+  }, [activeRow, translatedRowId]);
 
   async function handleUpload() {
     if (!selectedFile) {
       return;
     }
+
     setUploading(true);
-    setProgressText("正在切分文档...");
-    setLogs([]);
-    setResultsByKb({});
-    setCompareProgress(INITIAL_COMPARE_PROGRESS);
+    setProgressText("正在上传...");
     try {
       const response = await uploadDocument(selectedFile);
       setDocId(response.doc_id);
-      setChunks(response.chunks);
-      setHasPendingChunkSync(false);
-      setHasPendingReviewSync(false);
+      setDocumentText(response.document_text);
+      setCompareRows([]);
       setSubmittedForReview(false);
+      setHasPendingReviewSync(false);
       setActiveFilter("ALL");
-      setActiveResultKbFile(selectedCompareKbFiles[0] ?? STANDARD_KB_FILE_NAME);
+      setActiveRowId("");
       setPage(1);
-      setProgressText(`切分完成，共 ${response.chunks.length} 段`);
-      appendLog(`上传完成: ${response.source_file_name}`);
+      setPreviewExpanded(false);
+      setProgressText("已准备就绪");
     } catch (error) {
       setProgressText("上传失败，请检查后重试");
-      appendLog(`上传失败: ${String(error)}`);
     } finally {
       setUploading(false);
     }
   }
 
-  function handleChunkChange(chunkId: number, value: string) {
-    setChunks((prev) => prev.map((chunk) => (chunk.chunk_id === chunkId ? { ...chunk, content: value } : chunk)));
-    setHasPendingChunkSync(true);
+  async function handleCompare() {
+    if (!docId) {
+      return;
+    }
+
+    setComparing(true);
+    setCompareRows([]);
+    setSubmittedForReview(false);
     setHasPendingReviewSync(false);
-    setSubmittedForReview(false);
+    setActiveFilter("ALL");
+    setActiveRowId("");
+    setPage(1);
+    setProgressText("正在解析...");
 
-    const nextCompareState = invalidateCompareStateAfterChunkEdit({ resultsByKb, activeFilter });
-    if (nextCompareState.resultsByKb !== resultsByKb) {
-      setResultsByKb(nextCompareState.resultsByKb);
+    try {
+      await streamCompare(
+        docId,
+        (eventName, payload) => {
+          const eventPayload = (payload || {}) as Record<string, unknown>;
+          if (eventName === "compare_started") {
+            setProgressText("正在解析...");
+            return;
+          }
+
+          if (eventName === "compare_row") {
+            const result = eventPayload.result as CompareRow | undefined;
+            if (!result || typeof result.row_id !== "string") {
+              return;
+            }
+
+            const normalizedRow = normalizeCompareRow(result);
+            setCompareRows((prev) => mergeCompareRow(prev, normalizedRow));
+            setProgressText("正在解析...");
+            return;
+          }
+
+          if (eventName === "compare_done") {
+            const rowCount = Number(eventPayload.row_count || 0);
+            setProgressText(rowCount ? `已生成 ${rowCount} 条结果` : "未识别到可提示条目");
+            return;
+          }
+
+          if (eventName === "error") {
+            const message = String(eventPayload.message || "未知错误");
+            setProgressText(message || "解析失败，请重试");
+          }
+        },
+        () => undefined,
+      );
+    } catch (error) {
+      const message = error instanceof Error && error.message ? error.message : "解析失败，请重试";
+      setProgressText(message);
+    } finally {
+      setComparing(false);
     }
-    if (nextCompareState.activeFilter !== activeFilter) {
-      setActiveFilter(nextCompareState.activeFilter);
-    }
-
-    setCompareProgress(INITIAL_COMPARE_PROGRESS);
-    setProgressText("章节内容已修改，历史智能分析结果已失效");
-  }
-
-  function handleReviewResultChange(chunkId: number, nextResult: ChunkCompareResult) {
-    setResultsByKb((prev) => ({
-      ...prev,
-      [activeResultKbFile]: {
-        ...(prev[activeResultKbFile] ?? {}),
-        [chunkId]: normalizeReviewResult(nextResult),
-      },
-    }));
-    setHasPendingReviewSync(true);
-    setSubmittedForReview(false);
-  }
-
-  function buildReviewPayload(nextSubmittedForReview: boolean) {
-    return {
-      compare_results_by_kb: Object.fromEntries(
-        Object.entries(resultsByKb).map(([kbFile, resultMap]) => [
-          kbFile,
-          Object.values(resultMap)
-            .map((result) => normalizeReviewResult(result))
-            .sort((left, right) => left.chunk_id - right.chunk_id),
-        ]),
-      ),
-      submitted_for_review: nextSubmittedForReview,
-    };
-  }
-
-  function mapReviewResultsByKb(nextResultsByKb: Record<string, ChunkCompareResult[]>) {
-    return Object.fromEntries(
-      Object.entries(nextResultsByKb).map(([kbFile, resultList]) => [
-        kbFile,
-        Object.fromEntries(resultList.map((result) => [result.chunk_id, normalizeReviewResult(result)])),
-      ]),
-    );
   }
 
   async function syncReviewState(nextSubmittedForReview: boolean) {
@@ -236,127 +156,27 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
       return;
     }
 
-    const response = await saveDocumentReviewState(docId, buildReviewPayload(nextSubmittedForReview));
-    setResultsByKb(mapReviewResultsByKb(response.compare_results_by_kb));
+    const response = await saveDocumentReviewState(docId, {
+      compare_rows: compareRows.map((row) => normalizeCompareRow(row)),
+      submitted_for_review: nextSubmittedForReview,
+    });
+    setCompareRows(response.compare_rows.map((row) => normalizeCompareRow(row)));
     setSubmittedForReview(response.submitted_for_review);
     setHasPendingReviewSync(false);
-  }
-
-  async function handleCompare() {
-    if (!docId || chunks.length === 0 || selectedCompareKbFiles.length === 0) {
-      return;
-    }
-    setComparing(true);
-    setActiveResultKbFile(selectedCompareKbFiles[0] ?? STANDARD_KB_FILE_NAME);
-    setActiveFilter("ALL");
-    setLogs([]);
-    setSubmittedForReview(false);
-    setHasPendingReviewSync(false);
-    setPage(1);
-    setCompareProgress(INITIAL_COMPARE_PROGRESS);
-    setProgressText("正在提交编辑内容...");
-
-    try {
-      await patchChunks(docId, chunks);
-      setHasPendingChunkSync(false);
-      appendLog("编辑内容已保存，开始流式智能分析...");
-      await streamCompare(
-        docId,
-        selectedCompareKbFiles,
-        (eventName, payload) => {
-          const eventPayload = (payload || {}) as Record<string, unknown>;
-          const kbFile = String(eventPayload.kb_file || "");
-          const kbDisplayName = String(eventPayload.kb_display_name || resolveKnowledgeBaseDisplayName(kbFile));
-          const logPrefix = kbDisplayName ? `[${kbDisplayName}] ` : "";
-
-          if (eventName === "chunk_start") {
-            const index = Number(eventPayload.index || 0);
-            const total = Number(eventPayload.total || 0);
-            const heading = String(eventPayload.heading || "");
-            setCompareProgress({ current: index, total });
-            setProgressText(`${kbDisplayName} 智能分析进行中: ${index}/${total}`);
-            appendLog(`${logPrefix}开始处理第 ${index}/${total} 段: ${heading}`);
-            return;
-          }
-
-          if (eventName === "chunk_result") {
-            const result = eventPayload.result as ChunkCompareResult;
-            if (!result || typeof result.chunk_id !== "number" || !kbFile) {
-              return;
-            }
-            setResultsByKb((prev) => mergeChunkCompareResult(prev, kbFile, result));
-            appendLog(`${logPrefix}第 ${result.chunk_id} 段处理完成 (${result.label})`);
-            return;
-          }
-
-          if (eventName === "classification") {
-            const chunkId = Number(eventPayload.chunk_id || 0);
-            const categories = Array.isArray(eventPayload.categories)
-              ? (eventPayload.categories as string[])
-              : [];
-            appendLog(`${logPrefix}第 ${chunkId} 段分类: ${categories.length ? categories.join(" / ") : "其他"}`);
-            return;
-          }
-
-          if (eventName === "category_match") {
-            const category = String(eventPayload.category || "未知分类");
-            const hitCount = Number(eventPayload.hit_count || 0);
-            appendLog(`${logPrefix}分类 ${category} 命中 ${hitCount} 条`);
-            return;
-          }
-
-          if (eventName === "error") {
-            appendLog(`${logPrefix}处理异常: ${String(eventPayload.message || "未知错误")}`);
-            return;
-          }
-
-          if (eventName === "compare_done") {
-            setCompareProgress((currentProgress) => ({
-              current: currentProgress.total,
-              total: currentProgress.total,
-            }));
-            setProgressText(`智能分析完成，共处理 ${selectedCompareKbFiles.length} 个知识库`);
-            appendLog("全部章节智能分析完成");
-          }
-        },
-        (message) => {
-          appendLog(message);
-        },
-        {
-          onRetry: (message) => {
-            appendLog(message);
-          },
-        },
-      );
-    } catch (error) {
-      setCompareProgress(INITIAL_COMPARE_PROGRESS);
-      setProgressText("智能分析失败，请稍后重试");
-      appendLog(`智能分析失败: ${String(error)}`);
-    } finally {
-      setComparing(false);
-    }
   }
 
   async function handleExport() {
     if (!docId) {
       return;
     }
+
     try {
-      if (hasPendingChunkSync) {
-        setProgressText("正在保存编辑内容...");
-        await patchChunks(docId, chunks);
-        setHasPendingChunkSync(false);
-        setCompareProgress(INITIAL_COMPARE_PROGRESS);
-        appendLog("编辑内容已保存，历史智能分析结果已清除");
-      }
-
       if (hasPendingReviewSync) {
-        setProgressText("正在同步审核内容...");
+        setProgressText("正在保存...");
         await syncReviewState(submittedForReview);
-        appendLog("审核内容已同步");
       }
 
-      setProgressText("正在导出 Excel...");
+      setProgressText("正在导出...");
       const blob = await exportExcel(docId);
       const href = URL.createObjectURL(blob);
       const anchor = document.createElement("a");
@@ -367,9 +187,8 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
       anchor.remove();
       URL.revokeObjectURL(href);
       setProgressText("Excel 导出完成");
-      appendLog("Excel 导出成功");
-    } catch (error) {
-      appendLog(`导出失败: ${String(error)}`);
+    } catch {
+      setProgressText("导出失败，请重试");
     }
   }
 
@@ -379,88 +198,113 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
     }
 
     try {
-      if (hasPendingChunkSync) {
-        setProgressText("正在保存编辑内容...");
-        await patchChunks(docId, chunks);
-        setHasPendingChunkSync(false);
-        appendLog("编辑内容已保存，审核提交将使用最新正文");
-      }
-
-      setProgressText("正在提交审核...");
+      setProgressText("正在提交...");
       await syncReviewState(true);
-      setProgressText("文档已提交审核");
-      appendLog("文档已提交审核");
-    } catch (error) {
-      appendLog(`提交审核失败: ${String(error)}`);
+      setProgressText("已提交");
+    } catch {
+      setProgressText("提交失败，请重试");
+    }
+  }
+
+  function updateRow(rowId: string, updater: (row: CompareRow) => CompareRow) {
+    setCompareRows((prev) => prev.map((row) => (row.row_id === rowId ? normalizeCompareRow(updater(normalizeCompareRow(row))) : row)));
+    setHasPendingReviewSync(true);
+    setSubmittedForReview(false);
+  }
+
+  function handleReviewCommentChange(rowId: string, value: string) {
+    updateRow(rowId, (row) => updateCompareRowReviewComment(row, value));
+  }
+
+  function handleMarkReviewed(rowId: string) {
+    updateRow(rowId, (row) => markCompareRowReviewed(row));
+  }
+
+  function handleDeleteRow(rowId: string) {
+    setCompareRows((prev) => removeCompareRow(prev, rowId));
+    setHasPendingReviewSync(true);
+    setSubmittedForReview(false);
+    if (activeRowId === rowId) {
+      setActiveRowId("");
+    }
+  }
+
+  async function handleTranslateActiveRow() {
+    if (!activeRow || translating) {
+      return;
+    }
+
+    if (translatedRowId === activeRow.row_id && translatedText) {
+      setTranslatedRowId("");
+      setTranslatedText("");
+      setTranslationError("");
+      return;
+    }
+
+    setTranslating(true);
+    setTranslationError("");
+    try {
+      const response = await translateChunkContent(activeRow.source_excerpt);
+      setTranslatedRowId(activeRow.row_id);
+      setTranslatedText(response.translation);
+    } catch {
+      setTranslationError("翻译失败，请重试");
+    } finally {
+      setTranslating(false);
     }
   }
 
   return (
-    <section className="page-shell">
-      <div className="bg-orb bg-orb--left" />
-      <div className="bg-orb bg-orb--right" />
-
+    <section className="page-shell page-shell--light">
       <section className="hero">
-        <p className="hero__eyebrow">AI Assistant</p>
-        <h1>技术协议偏差分析POC</h1>
+        <p className="hero__eyebrow">DeepBlue</p>
+        <h1>询价文件标准化配套比对工作台</h1>
       </section>
 
-      <UploadPanel
-        loading={uploading}
-        fileName={selectedFile?.name || ""}
-        onSelectFile={setSelectedFile}
-        onSubmit={handleUpload}
-      />
+      <UploadPanel loading={uploading} fileName={selectedFile?.name || ""} onSelectFile={setSelectedFile} onSubmit={handleUpload} />
 
-      <ComparePanel
-        hasDocument={Boolean(docId)}
-        comparing={comparing}
-        progressText={progressText}
-        progressCurrent={compareProgress.current}
-        progressTotal={compareProgress.total}
-        logs={logs}
-        knowledgeBaseOptions={compareOptions}
-        selectedKnowledgeBaseFiles={selectedCompareKbFiles}
-        submittedForReview={submittedForReview}
-        onToggleKnowledgeBase={handleToggleKnowledgeBase}
-        onCompare={handleCompare}
-        onExport={handleExport}
-        onSubmitReview={handleSubmitReview}
-      />
+      <section className="glass-card compare-panel compare-panel--light">
+        <div className="compare-panel__head">
+          <h2>智能分析</h2>
+        </div>
+        <div className="compare-panel__actions">
+          <button className="btn btn-primary compare-panel__action-btn" onClick={handleCompare} disabled={!docId || comparing}>
+            {comparing ? "解析中..." : "开始分析"}
+          </button>
+          <button className="btn btn-lite compare-panel__action-btn" onClick={handleExport} disabled={!docId || comparing}>
+            导出 Excel
+          </button>
+          <button className="btn btn-review compare-panel__action-btn" onClick={handleSubmitReview} disabled={!docId || comparing}>
+            提交审核
+          </button>
+          {submittedForReview ? <span className="compare-panel__submitted">已提交</span> : null}
+        </div>
+        <div className="compare-panel__status compare-panel__status--light">
+          <span className="pulse-dot pulse-dot--static" />
+          <span>{progressText}</span>
+          <span className="compare-panel__status-meta">已审 {reviewedCount}/{compareRows.length}</span>
+        </div>
+      </section>
 
-      <section className="glass-card filter-panel">
+      <section className="glass-card filter-panel filter-panel--light">
         <div className="filter-panel__head">
           <div>
-            <h3>类型筛选</h3>
-            {selectedCompareKbFiles.length > 1 ? <p>当前展示 {resolveKnowledgeBaseDisplayName(activeResultKbFile)} 的智能分析结果</p> : null}
+            <h3>分类筛选</h3>
           </div>
-
-          {selectedCompareKbFiles.length > 1 ? (
-            <div className="filter-panel__views">
-              {selectedCompareKbFiles.map((fileName) => (
-                <button
-                  key={fileName}
-                  type="button"
-                  className={`btn btn-lite filter-btn ${activeResultKbFile === fileName ? "is-active" : ""}`}
-                  onClick={() => {
-                    setActiveResultKbFile(fileName);
-                    setActiveFilter("ALL");
-                  }}
-                >
-                  {resolveKnowledgeBaseDisplayName(fileName)}
-                </button>
-              ))}
-            </div>
-          ) : null}
+          <button className="btn btn-lite" type="button" onClick={() => setPreviewExpanded((prev) => !prev)} disabled={!documentText}>
+            {previewExpanded ? "收起全文" : "查看全文"}
+          </button>
         </div>
-
         <div className="filter-panel__buttons">
           {filterModel.order.map((filterKey) => (
             <button
               key={filterKey}
               type="button"
               className={`btn btn-lite filter-btn ${activeFilter === filterKey ? "is-active" : ""}`}
-              onClick={() => setActiveFilter(filterKey)}
+              onClick={() => {
+                setActiveFilter(filterKey);
+                setPage(1);
+              }}
             >
               {filterModel.labels[filterKey]}({filterModel.counts[filterKey] ?? 0})
             </button>
@@ -468,24 +312,149 @@ function HomePage({ compareKnowledgeBases }: HomePageProps) {
         </div>
       </section>
 
-      {shouldShowPagination ? renderPaginationBar() : null}
+      {previewExpanded && documentText ? (
+        <section className="glass-card document-preview">
+          <div className="document-preview__head">
+            <h3>询价文件全文</h3>
+            <span>{selectedFile?.name || "已上传文件"}</span>
+          </div>
+          <pre className="document-preview__body">{documentText}</pre>
+        </section>
+      ) : null}
 
-      <section className="chunks-grid">
-        {pageModel.chunks.map((chunk) => (
-          <ChunkCard
-            key={chunk.chunk_id}
-            chunk={chunk}
-            result={activeResultMap[chunk.chunk_id]}
-            activeKnowledgeBaseFile={activeResultKbFile}
-            onChange={handleChunkChange}
-            onReviewChange={handleReviewResultChange}
-          />
-        ))}
+      <section className="glass-card results-table-card">
+        <div className="results-table-card__head">
+          <h2>命中结果</h2>
+        </div>
+
+        {!compareRows.length ? (
+          <div className="results-empty">
+            <p>{docId ? "尚未生成命中结果。" : "请先上传文件。"}</p>
+          </div>
+        ) : (
+          <>
+            <div className="results-table-wrap">
+              <table className="results-table">
+                <thead>
+                  <tr>
+                    <th>章节标题</th>
+                    <th>询价文件的原文段落或句子</th>
+                    <th>知识库标准化配套条目的原文</th>
+                    <th>大模型总结的差异结论</th>
+                    <th>分类</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pagedRows.map((row) => (
+                    <tr key={row.row_id} className={activeRowId === row.row_id ? "is-active" : ""} onClick={() => setActiveRowId(row.row_id)}>
+                      <td>
+                        <strong>{row.chapter_title}</strong>
+                        <span className={`review-status review-status--${normalizeCompareRow(row).review_status === "已审" ? "done" : "pending"}`}>
+                          {normalizeCompareRow(row).review_status}
+                        </span>
+                      </td>
+                      <td>{row.source_excerpt}</td>
+                      <td>{row.kb_entry_text}</td>
+                      <td>
+                        <span className={`summary-tone summary-tone--${resolveSummaryTone(row.difference_summary)}`}>{row.difference_summary}</span>
+                      </td>
+                      <td>
+                        <span className={`table-type-pill table-type-pill--${row.type_code.toLowerCase()}`}>{row.type_code}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="kb-pagination-bar">
+              <span>
+                当前第 {safePage}/{totalPages} 页，共 {filteredRows.length} 条
+              </span>
+              <div className="kb-pagination-bar__actions">
+                <button className="btn btn-lite" type="button" onClick={() => setPage((prev) => Math.max(1, prev - 1))} disabled={safePage <= 1}>
+                  上一页
+                </button>
+                <button className="btn btn-lite" type="button" onClick={() => setPage((prev) => Math.min(totalPages, prev + 1))} disabled={safePage >= totalPages}>
+                  下一页
+                </button>
+              </div>
+            </div>
+          </>
+        )}
       </section>
 
-      {shouldShowPagination ? renderPaginationBar() : null}
+      {activeRow ? (
+        <>
+          <div className="drawer-backdrop" onClick={() => setActiveRowId("")} aria-hidden="true" />
+          <aside className="result-drawer" aria-label="结果审核抽屉">
+            <div className="result-drawer__head">
+              <div>
+                <p className="hero__eyebrow">审核详情</p>
+                <h3>{activeRow.chapter_title}</h3>
+              </div>
+              <button className="btn btn-lite btn--tiny" type="button" onClick={() => setActiveRowId("")}>
+                关闭
+              </button>
+            </div>
+
+            <div className="result-drawer__section">
+              <span className="muted">询价文件原文</span>
+              <div className="result-drawer__excerpt">{displayExcerpt}</div>
+              <div className="result-drawer__actions">
+                <button className="btn btn-lite btn--tiny" type="button" onClick={() => void handleTranslateActiveRow()} disabled={translating}>
+                  {translatedRowId === activeRow.row_id && translatedText ? "显示原文" : translating ? "翻译中..." : "翻译句段"}
+                </button>
+                <span className={`table-type-pill table-type-pill--${activeRow.type_code.toLowerCase()}`}>{activeRow.type_code}</span>
+              </div>
+              {translationError ? <p className="result-drawer__error">{translationError}</p> : null}
+            </div>
+
+            <div className="result-drawer__section">
+              <span className="muted">标准化配套条目</span>
+              <div className="result-drawer__excerpt">{activeRow.kb_entry_text}</div>
+            </div>
+
+            <div className="result-drawer__section">
+              <span className="muted">差异结论</span>
+              <div className={`summary-tone summary-tone--${resolveSummaryTone(activeRow.difference_summary)}`}>{activeRow.difference_summary}</div>
+            </div>
+
+            <div className="result-drawer__section">
+              <label className="review-modal__field">
+                <span>审核意见</span>
+                <textarea
+                  className="kb-input kb-input--textarea result-drawer__textarea"
+                  rows={5}
+                  value={activeRow.review_comment}
+                  onChange={(event) => handleReviewCommentChange(activeRow.row_id, event.target.value)}
+                />
+              </label>
+            </div>
+
+            <div className="result-drawer__footer">
+              <button className="btn btn-review" type="button" onClick={() => handleMarkReviewed(activeRow.row_id)}>
+                标记已审
+              </button>
+              <button className="btn btn-lite kb-danger" type="button" onClick={() => handleDeleteRow(activeRow.row_id)}>
+                删除结果
+              </button>
+            </div>
+          </aside>
+        </>
+      ) : null}
     </section>
   );
+}
+
+function resolveSummaryTone(summary: string) {
+  if (summary.startsWith("直接满足：")) {
+    return "match";
+  }
+  if (summary.startsWith("存在冲突：")) {
+    return "conflict";
+  }
+  return "partial";
 }
 
 export default HomePage;

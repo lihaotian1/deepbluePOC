@@ -1,412 +1,88 @@
 {
-  "通用规范General Specification": [
+  "通用规范": [
     {
-      "符合API 610 (ISO 13709)，（由深蓝声明澄清）Compliance with API 610 (ISO 13709), (as clarified by DEEPBLUE position statements)": "P"
+      "深蓝管路管口标准配置为：1）冷却、急冷、外冲洗、保温、润滑管路为单一入口或单一出口；2）泵壳体排液接口按第7.6.2.5段汇总；3）泵壳体排气接口不提供汇总；4）辅助系统/管路排残液及排气接口不提供汇总。所有主管路进出口配置闸阀。": "P"
     },
     {
-      "密封腔尺寸符合API 682 (ISO 21049)（由深蓝声明澄清）Compliance with API 682 (ISO 21049) – seal cavity dimensions (as clarified by DEEPBLUE position statements)": "P"
+      "压力泵壳辅助连接处为承插焊或整体法兰；冲洗管路为承插焊；冷却管路为螺纹或承插焊接。": "P"
     },
     {
-      "所有规格都是双蜗壳结构 Double Volute casing on all sizes": "P"
+      "对于带有NPS 2（DN 50）或更小出口管口的泵，除吸入和出口管口外的壳体接口应至少为NPS 1/2（DN 15）。对于带有NPS 3（DN 80）或更大出口管口的泵，除了与泵尺寸无关的密封冲洗管道和仪表的连接件可为NPS 1/2（DN 15），接口应至少为NPS 3/4（DN 20）。": "P"
     },
     {
-      "所有的叶轮N 都不高于11000。 All impellers 11000 Nss or less. SS": "P"
+      "工作温度低于300°F（150°C）的泵采用底脚安装结构；中心支撑为可选结构。": "P"
     },
     {
-      "配Class 300 RF法兰时，MAWP设计最高可达5.1Mpa， MAWP designs up to 5.1Mpa with Class 300 RF flanges": "P"
+      "深蓝不提供防反转棘爪（NRR），该部件未包含在供货范围内。本公司泵结构设计可承受反转工况，不会因单纯反转造成损坏；仅在泵处于反转状态下强行启动时，存在发生损坏的可能。": "P"
     },
     {
-      "叶轮动态平衡符合ISO 1940 G2.5标准 Impeller dynamically balanced to ISO 1940 G2.5": "P"
+      "叶轮、平衡鼓和类似的主要旋转部件应根据ISO 21940-11 G2.5级进行动平衡，用于平衡的心轴的重量应不得超过被平衡部件的重量。轴不需要平衡。": "P"
     },
     {
-      "根据API 610 8th ed的要求，叶轮的动态平衡可达到ISO 1940 G1.0标准 Impeller dynamically balanced to ISO 1940 G1.0 as required by API 610 8th ed": "B"
+      "重量超过20kg的零部件提供吊耳或吊环，以便于搬运.": "P"
     },
     {
-      "默认情况下，上进上出管口带ANSI B16.5 Class 300法兰 Top suction and discharge nozzles with ANSI B16.5 Class 300 flanges as default": "P"
+      "深蓝按E01.09-01《标准喷漆程序》执行。": "P"
     },
     {
-      "可选设计：侧进侧出，管口同侧 Option: side suction and discharge, same side nozzles": "C"
+      "深蓝法兰为锻件。": "P"
     },
     {
-      "可选设计：侧进侧出，管口异侧 Option: side suction and discharge, opposite side nozzles": "C"
+      "深蓝满足API 610 表5 管口力矩的2倍。": "P"
     },
     {
-      "可选设计：侧进上出 Option: side suction, top discharge nozzles": "C"
+      "若有规定，深蓝可根据API 610 提供汽蚀试验。": "A"
     },
     {
-      "逆时针旋转结构（从驱动端看）CCW Construction (as viewed from drive end)": "A"
+      "深蓝提供2小时运转试验。": "B"
     },
     {
-      "泵体紧固、密封腔紧固、轴承箱体紧固和泵的包装均用公制紧固件 UN fasteners for case bolting, seal chamber bolting, bearing housing mounting and pump packaging": "P"
+      "深蓝可提供设备的3D模型，格式为.STEP。": "A"
     },
     {
-      "1个排液口，法兰连接 1 Drain with flange connection": "P"
-    },
-    {
-      "根据ISO 13709，API 610和API 671，轴伸采用1：16锥度，用于带加长段的联轴器连 接 1 in 16 taper shaft extensions for spacer couplings. Per ISO 13709, API 610 and API 671": "P"
-    },
-    {
-      "轴伸用于液压配合联轴器的连接 Shaft Extension for Hydraulic fit couplings": "B"
+      "无损检测人员资质符合SNT-TC-1A认证。": "P"
     }
   ],
-  "性能和操作条件Performance and Operating Conditions": [
+  "底座": [
     {
-      "符合API 610 (ISO 13709)的液压配合标准 Conformance with API 610 (ISO 13709), hydraulic fit criteria": "P"
-    },
-    {
-      "根据产品手册的标准水力性能（2980转和1480转）Standard hydraulic performance as per the product manual (2980 rpm & 1480 rpm)": "P"
-    },
-    {
-      "介质温度在-29℃和430℃之间 Temperatures between -29℃ and 430℃": "P"
-    },
-    {
-      "介质温度在-29℃到-46℃之间（可能需要进行夏比冲击测试--取决于材料 Temperatures between -29℃ to -46℃ (may require Charpy impact testing – depending on materials)": "A"
-    },
-    {
-      "温度低于-46℃（可能需要进行夏比冲击试验——取决于材料）Temperatures below - 46℃ (may require Charpy impact testing – depending on materials)": "C"
+      "深蓝为卧式泵设计一体式可供灌浆的底座，买方应规定以下类型和选项：\na) 带有倾斜排残沟的平面顶板底座，该排残沟凸出侧轨边缘，并包围整个底座（图37）；\nb)\t倾斜的整个顶板，安装在侧轨之间，延伸至泵下方，以及驱动传动系部件（图38）；\nc)\t倾斜的部分顶板，安装在侧轨之间，仅在泵和联轴器下方延伸（图39）；\nd)\t上述无顶板的开放式底座（这种类型可需要增加结构以支撑泵和管口负载）；\ne)\t上述版本之一的非灌浆底座，其中底座和底座支撑组件应具有足够的刚性，以便在没有灌浆填充的情况下进行安装，但沿底座的侧轨具有均匀的支撑；\nf)\t如第e）项所述的非灌浆底座，带有万向支架、三点支架、防振支架（AVM）弹簧支架或其他类型的支架。由于支架之间的距离，这种底座类型需要一个明显更硬和更重的结构，以尽量减少管口负载、驱动机扭矩和其他负载的挠曲。\n注：上图（图37、图38和图39）仅用于阐明顶板的概念设计，而非横梁支撑顶板的方式。": "P"
     }
   ],
-  "口环和运行间隙Wear Rings and Running Clearances": [
+  "可选设计": [
     {
-      "动静口环按深蓝标准执行材料选择Rotating and stationary wear rings – Deepblue standard materials": "P"
+      "保温及电伴热不属于深蓝标准供货。": "B"
     },
     {
-      "提供可更换的叶轮口环 Impeller rings are available": "P"
+      "起吊梁不属于深蓝标准供货。": "B"
     },
     {
-      "口环间隙符合API 610标准 API 610 wear ring clearances": "P"
+      "减震垫不属于深蓝标准供货。": "B"
     },
     {
-      "可选API 610标准口环热间隙（需要效率修正）Optional API 610 hot clearances for wear rings (eff correction required)": "P"
+      "操作平台不属于深蓝标准供货。": "B"
     },
     {
-      "可选非金属小间隙设计的喉部衬套（如果API 682要求）Optional throat bushing of non-metallic close clearance design (if required by API 682)": "B"
-    }
-  ],
-  "材料Materials": [
-    {
-      "S-6, S-8, C-6, A-7, A-8, D-1, D-2材料见产品手册B01 S-6, S-8, C-6, A-7, A-8, D-1, D-2 per product manual section B01": "P"
-    },
-    {
-      "符合NACE MR0175, MR0103标准 NACE MR0175, MR0103 compliance": "A"
-    },
-    {
-      "可选特殊材料或表面涂层，如HOVF涂层、硼涂层等 Special materials or surface coatings such as HOVF, Boron coatings, etc.": "C"
-    },
-    {
-      "材料验证报告 – 提供体、盖、轮、轴的报告存档 Certified Material Test Reports – Kept on record : Case, Endcover on two rows, Impeller, and Shaft.": "P"
-    },
-    {
-      "材料验证报告-提供体、盖、轮、轴的报告存档副本Certified Material Test Reports – Actual copies Supplied: Case, Endcovers, Impeller, and Shaft.": "C"
-    }
-  ],
-  "管路Piping": [
-    {
-      "1个泵体排液口，DN20法兰连接 1 Case drain, DN20 flange connection": "P"
-    },
-    {
-      "3个泵体排液口，DN20法兰连接（用于完全排液）3 Case drains, DN20 flange connection (for complete drainage)": "A"
-    },
-    {
-      "可选两个平面角板支撑的排液连接 Optional two plane gusseted drain connections": "P"
-    },
-    {
-      "可选暖泵接口（RF法兰--利用3个排液接口）Optional warm-up connections (RF flange – utiilizes 3 drain connections)": "A"
-    },
-    {
-      "可选密封腔测压接口，每端NPT1/2 Optional seal chamber pressure tap NPT1/2 on each end": "C"
-    },
-    {
-      "可选密封冲洗方案11、21、23、31、32、41、54、61和62（排气阀需加价）Seal flush plans 11, 21, 23, 31, 32, 41, 54, 61, and 62 (Vent valve will cost extra)": "P"
-    },
-    {
-      "密封冲洗方案：DN15或DN20 sch 160 碳钢或 316L承插焊/法兰连接（与泵），NPT 螺纹连接（与密封） Seal Flush Plans: DN15 or DN20 sch 160 C.S SW/Flanged or 316L ss SW/Flanged(for pump)": "B"
-    },
-    {
-      "方案52或53A带有5加仑的316ss补液器（用户指定），采用DN20 316L钢管连接 Plan 52 or 53A with 5 gallon 316L ss Customer specified Fluid Reservoir connected with DN20 316ss piping, NPT threaded connection (for seal)": "P"
-    },
-    {
-      "方案72、74、75或76用户指定的供气盘采用DN20 316L钢管连接 Plan 72, 74, 75 or 76 Customer specified Gas Supply Panel connected with DN20 316L ss tubing": "P"
-    },
-    {
-      "方案53B，53C用DN20 316L不锈钢管连接 Plan 53B, 53C connected with DN20 316L ss piping.": "C"
-    },
-    {
-      "用户指定储液罐与DN20 316L不锈钢管连接 Customer specified Fluid Reservoir connected with DN20 316L ss tubing.": "P"
-    },
-    {
-      "方案 A, K, M, M 冷却水管路（产品冷却或外部冷却源）采用螺纹连接 Plans A, K, mod M, M cooling water pipes are threaded. mod": "P"
-    },
-    {
-      "密封冲洗方案按API 682(ISO 21049)现行版本执行 Seal flush plans as defined in API 682(ISO 21049) Current Edition": "P"
-    },
-    {
-      "泵体底部的蒸汽夹套（由用户进行保温）或蒸汽伴热（由用户进行保温）——用来 保持备用泵中的粘性介质的温度 Steam jacket on bottom portion of casing (insulation by customer), or, steam tracing (insulation by customer)--used to keep viscous pumpage warm in standby pumps": "C"
-    }
-  ],
-  "轴承/轴承箱体Bearings / Bearing Housing": [
-    {
-      "背靠背双列推力角接触球轴承[型号\"73xx\" BECBM] Duplex thrust bearings [type “73xx” BECBM] mounted back-to-back": "P"
-    },
-    {
-      "C3间隙径向球轴承[型号\"6xxx\"] Ball radial bearings [type “6xxx”] C3 clearance": "P"
-    },
-    {
-      "滑动轴承（巴氏合金，自带甩油环）Sleeve bearings (babbit lined journal bearings with their own oil ring)": "P"
-    },
-    {
-      "带有散热片的轴承箱体，配油雾润滑接口 Finned carbon steel bearing housing with oil mist taps": "P"
-    },
-    {
-      "风扇冷却 Fan cooling": "P"
-    },
-    {
-      "可选绕片管插入式冷却（可选水冷结构）Optional provisions for finned tube insert cooler (Water product cooled designs)": "A"
-    },
-    {
-      "可选轴承部件内侧（靠近密封腔体）配置风扇 Optional high temp heat sink fans & slotted brackets (between gland and bearing housing inboard end cover)": "A"
-    },
-    {
-      "在轴承箱体组件中提供预留吹扫油雾Provisions for purge oil mist provided in bearing housing assembly": "P"
-    },
-    {
-      "BB轴承（球/球）可选纯油雾润滑（不提供甩油环、风扇或水冷绕片管）Optional pure oil mist available on ball/ ball (No oil rings, fans, or cooling insert provided)": "P"
-    },
-    {
-      "纯油雾润滑可选带排液阀的排水收集箱 Optional drain collection bottle with drain cock for pure oil mist": "P"
-    },
-    {
-      "深蓝提供一体式恒位油杯 Deepblue constant level oiler": "P"
-    },
-    {
-      "深蓝机械油封 Deepblue Bearing Isolators": "P"
-    },
-    {
-      "采用美国的INPRO油封标准，或亚洲的AES标准 INPRO seals standard in Americas, AES standard from Asia.": "A"
-    },
-    {
-      "磁力油封 IsoMag bearing Isolators": "A"
-    },
-    {
-      "两个箱体上都有温度探头配置（接口NPT1/2）Temperature probe provision (NPT1/2) on both housings": "P"
-    },
-    {
-      "可选轴承箱体热电阻测温结构 Optional RTD’s provided for bearing housing": "B"
-    },
-    {
-      "可选轴承箱体热电阻远传至接线箱结构 Optional RTD’s wired to an auxiliary conduit box": "B"
-    },
-    {
-      "可选测振转换接头（需钻孔）Optional vibration bracket (drilling to be specified)": "B"
-    },
-    {
-      "可选轴承箱体振动探测器（垫式）Optional vibration detectors (pad type) provided for bearing housing": "B"
-    },
-    {
-      "可选轴承箱体振动探测器结构（X-Y探测型）（滑动轴承）Optional vibration detectors ( X-Y probe type) provided for bearing housing (journal bearings)": "B"
-    },
-    {
-      "可选的振动探测器远传至接线箱结构 Optional vibration detectors wired to an auxiliary conduit box": "B"
-    }
-  ],
-  "底座Baseplates": [
-    {
-      "深蓝标准灌浆底座符合API610 Deepblue standard, grout-type API 610 baseplates": "P"
-    },
-    {
-      "非灌浆底座（撬装结构）Non-grout base plate (skid type)": "B"
-    },
-    {
-      "用户特殊要求或用户定制底座 Customer Specified or Custom made Baseplate": "C"
-    },
-    {
-      "按照API 610 (ISO 13709)现行版本的要求，底座全密封焊接 Full seal welding of the baseplate underside as required by API 610 (ISO 13709), Current Edition": "P"
-    },
-    {
-      "底座采用加强筋，承受2倍的管口载荷 Optional 2x nozzle load baseplate stiffeners": "A"
-    },
-    {
-      "加宽底座（相较产品手册D01页所示的标准底座宽度宽）需要加强筋 Extra-wide (wider than standard baseplate shown on Product Manual page D01) baseplate requires stiffeners": "B"
-    },
-    {
-      "可拆卸的驱动器调整螺钉（插入式）Removable driver alignment screws (drop-in type)": "P"
-    },
-    {
-      "每个地脚螺栓位置配调平螺钉 Baseplate leveling screws at each anchor bolt location": "P"
-    },
-    {
-      "底座灌浆Cementous grout preparation on bottom of baseplate": "B"
-    },
-    {
-      "底座采用环氧树脂灌浆（无机硅酸锌底漆）Epoxy grout preparation on bottom of baseplate (inorganic zinc silicate primer)": "P"
-    },
-    {
-      "根据用户的其他要求灌浆 Grout preparation to other customer requirements": "C"
-    },
-    {
-      "底座焊接后消除应力处理 Stress relief of the baseplate after welding": "B"
-    },
-    {
-      "隔音罩 Noise hood": "C"
-    },
-    {
-      "汽轮机驱动装置 Steam Turbine driven unit": "C"
-    },
-    {
-      "齿轮箱和变频电机驱动装置Gear or fluid coupling driven unit": "C"
-    },
-    {
-      "圆柱形联轴器罩采用铝材质（根据ISO 13709 API 610现行版本和OSHA设计） Cylindrical coupling guard furnished in Aluminum (designed per ISO 13709 API 610, Current Edition and OSHA)": "C"
-    },
-    {
-      "联轴器罩采用其他材质 Coupling guard furnished in other materials": "A"
-    },
-    {
-      "联轴器罩根据用户的特殊要求设计 Coupling guard to customer specific design requirements": "C"
-    }
-  ],
-  "测试和检验(按深蓝质量计划) Testing and Inspection (In accordance with Deepblue Quality Plan)": [
-    {
-      "水压认证试验按1.5倍MAWP进行，用水试验，保压30分钟 Certified hydrotest with water @ 1.5 X job condition MAWP for 30 minutes": "P"
-    },
-    {
-      "可选整机气压试验 Optional air test of complete assembled unit": "A"
-    },
-    {
-      "根据API 610(ISO 13709)现行版本，安装合同密封，用水进行性能测试（50HZ） Performance test on water per API 610(ISO 13709), Current Edition with job seals (50 HZ)": "P"
-    },
-    {
-      "根据API 610(ISO 13709)现行版本，安装试验密封（当合同密封不适应水试 验），采用水进行性能测试（50HZ）Performance test on water per API 610(ISO 13709), Current Edition with Test seals when the job seal face selection for the product is not suitable for water (50 HZ)": "P"
-    },
-    {
-      "NPSHr试验 NPSHr confirmation test": "A"
-    },
-    {
-      "根据API 610(ISO 13709)现行版本和H.I.扬程故障的规定，对水进行NPSH测试。需要 更多的测试和维修时间 NPSH test on water per API 610(ISO 13709) current edition and H.I. with breakdown knees. Requires more Test and Engineering time.": "A"
-    },
-    {
-      "水压试验或性能试验见证 Witnessing of any performance or hydrostatic test.": "A"
-    },
-    {
-      "将合同电机、密封、润滑油管路、底座等（其他指定设备）整机配套后，进行完整的 测试 Complete train test with job motor, seal system, lube oil system, baseplate, etc (specify equipment to be included)": "B"
-    },
-    {
-      "当试验时间超出API610 11th规定，可选 Optional extra test time beyond that mandated in ISO 13709 API 610, Current Edition": "P"
-    },
-    {
-      "第三方见证检查/催货 Third party witness inspection / expediting": "A"
+      "当用户要求时，转子或芯包的装运和储存包装容器可设计成，在储存期间允许充装惰性气体进行保护，请加价。": "B"
     },
-    {
-      "可选的性能试验后进行拆装检查 Optional post test disassembly and inspection": "P"
-    },
-    {
-      "轴承箱体振动测试 Bearing housing resonance check": "B"
-    },
-    {
-      "提前批准的测试程序 Pre-approved test procedures": "P"
-    },
-    {
-      "提前批准的焊接工艺 Pre-approved weld procedures": "P"
-    },
-    {
-      "用户批准的焊接工艺或测试程序 Customer approval of weld or test procedures": "A"
-    },
-    {
-      "用户对批准的主要焊缝维修图表或记录 Customer approval of major weld repair charts or records": "A"
-    },
-    {
-      "NACE MR0175, MR0103和/或焊后热处理要求 NACE MR0175, MR0103 and/or Post weld heat treat requirement imposed": "A"
-    },
-    {
-      "夏比冲击试验 Charpy impact testing": "A"
-    },
-    {
-      "超出材料规格要求的硬度试验（注明零件名称）Hardness testing beyond that required to meet the material specifications (indicate parts to be tested)": "A"
-    },
-    {
-      "无损检验：磁粉、液体渗透、光谱分析 Non-destructive examinations: Magnetic Particle, Liquid Penetrant, PMI": "A"
-    },
-    {
-      "无损检验：RT或UT Non-destructive examinations: RT or UT": "C"
-    }
-  ],
-  "机械密封Mechanical Seals": [
-    {
-      "密封腔尺寸符合API682标准，不需要对泵进行改造 Seal that fits in API 682 seal chamber and doesn’t require pump modification": "P"
-    },
-    {
-      "深蓝标准密封或深蓝优选供应商Seal from Deepblue or Deepblue preferred vendor": "P"
-    },
-    {
-      "可选浮动式喉部衬套 - 腔体尺寸满足API 610(ISO 13709)标准要求 Optional floating throat bushing - to fit in API 610(ISO 13709) dimension seal chamber": "A"
-    },
-    {
-      "密封图纸提前与供应商确认（交货期延长4周）Seal Drawing approval prior to manufacturer ( Add 4 weeks to delivery)": "A"
-    }
-  ],
-  "联轴器Couplings": [
-    {
-      "带有拉出孔的圆盘式联轴器。联轴器按AGMA 9级做平衡，供应商是深蓝优选 供应商Disc type coupling with puller holes. Coupling manufactured to an AGMA 9 class of balance from Deepblue preferred vendor": "P"
-    },
-    {
-      "其他联轴器制造商 Other coupling manufacturers": "B"
-    },
-    {
-      "联轴器罩材质为1060（铝）Coupling cover material is 1060 (aluminum)": "A"
-    },
-    {
-      "用户指定要求的其他材质联轴器罩 Coupling covers of other materials specified by user": "C"
-    }
-  ],
-  "驱动机Drivers": [
-    {
-      "供应商为深蓝合格供应商From Deepblue preferred vendor": "P"
-    },
-    {
-      "其他电机制造商 Other motor manufacturers": "B"
-    },
-    {
-      "汽轮机驱动 Steam Turbine Drivers": "B"
-    },
-    {
-      "增速或降速的齿轮箱或耦合器调速。 Speed increasing or speed reducing gearbox or fluid coupling.": "C"
-    },
-    {
-      "变频驱动机(VFD)与电机一起打包提供 Variable frequency drivers (VFD) Supplied as a package with the motor": "C"
-    }
-  ],
-  "可选设计Options": [
     {
-      "暖泵孔板Warm-up orifice": "C"
+      "出于运输考虑，发运前轴承箱不预先加注润滑油；若为脂润滑轴承，则预加润滑脂。": "A"
     },
     {
-      "入口滤网Suction strainer": "C"
+      "如有规定，供应商应提供材料证书，其中包括为承压铸件和锻件、叶轮和轴提供材料的炉的化学分析和机械性能(3.1证书)。除非另有规定，否则本要求不包括管接头、辅助管道组件、垫圈和螺栓。": "P"
     },
     {
-      "根据用户要求提供逻辑控制器(PLC) Programmable Logic Controller (PLC) in accordance with customer defined scope of supply": "C"
+      "买方应规定所有适用的电气规范，买方应根据要求提供适用的当地电气规范；若无规定，深蓝按IEC相关规范执行。": "P"
     }
   ],
   "软交付Software": [
     {
-      "深蓝标准图纸：外形图，剖面图和零件清单，管路图，机械密封图纸，联轴器图纸和 驱动机图纸 Standard Deepblue drawings: G.A., cross sections & parts list, piping, mechanical seal, coupling and driver": "P"
+      "深蓝合同文件和工程设计资料符合 API 610 附录 L 要求，语言格式为中英文。": "P"
     },
     {
-      "泵和驱动机的深蓝标准数据单 Standard Deepblue data sheet for pump and driver": "P"
+      "铭牌及标识符合API 610要求，语言格式为中文。": "P"
     },
     {
-      "深蓝标准IOM：泵、驱动机、机械密封、联轴器 Standard Deepblue IOM: pump, driver, mechanical seal, coupling": "P"
-    },
-    {
-      "合格证、平衡证、测试数据、间隙--QA数据包 Certificate of Compliance, Balance certificates, Test Data, Clearances – QA data packet": "B"
-    },
-    {
-      "备件报价和说明书（买方指定备件数量）Spare part quote and instruction books (buyer to specify quantities)": "P"
-    },
-    {
-      "深蓝项目经理在深蓝标准表上发布每月进度报告 Deepblue Project Manager issues monthly progress report on Deepblue standard forms": "P"
-    },
-    {
-      "其他进度报告，方法，时间间隔 Other progress report type, or method, or time interval": "B"
+      "深蓝焊工/操作工资格、焊接工艺规程符合ASME认证。": "P"
     }
   ]
 }

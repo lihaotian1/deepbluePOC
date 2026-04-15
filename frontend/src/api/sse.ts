@@ -11,7 +11,6 @@ interface StreamCompareOptions {
 
 export async function streamCompare(
   docId: string,
-  knowledgeBaseFiles: string[],
   onEvent: EventHandler,
   onError: (message: string) => void,
   options: StreamCompareOptions = {},
@@ -28,9 +27,7 @@ export async function streamCompare(
         method: "POST",
         headers: {
           Accept: "text/event-stream",
-          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ knowledge_base_files: knowledgeBaseFiles }),
         openWhenHidden: true,
         async onopen(response) {
           if (!response.ok) {

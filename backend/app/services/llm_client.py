@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 from collections.abc import Sequence
 from collections import defaultdict
@@ -9,10 +10,15 @@ import httpx
 from app.services.kb_loader import KnowledgeEntry
 from app.services.prompt_builder import (
     build_batch_category_messages,
+    build_document_compare_messages,
     build_batch_item_messages,
     build_category_messages,
     build_item_messages,
 )
+
+MAX_CHAT_RETRIES = 2
+BASE_RETRY_DELAY_SECONDS = 1.0
+FULL_DOCUMENT_MIN_TIMEOUT_SECONDS = 180
 
 
 class OpenAICompatibleMatcherLLM:
@@ -22,10 +28,20 @@ class OpenAICompatibleMatcherLLM:
         self.model = model
         self.timeout = timeout
 
-    async def classify_categories(self, *, chunk_text: str, category_keys: list[str]) -> list[str]:
+    async def classify_categories(
+        self,
+        *,
+        chunk_text: str,
+        category_keys: list[str],
+        category_contexts: Sequence[dict[str, object]] | None = None,
+    ) -> list[str]:
         if not self.api_key:
             return []
-        messages = build_category_messages(chunk_text=chunk_text, category_keys=category_keys)
+        messages = build_category_messages(
+            chunk_text=chunk_text,
+            category_keys=category_keys,
+            category_contexts=category_contexts,
+        )
         payload = await self._chat_json(messages)
         categories = payload.get("categories")
         if not isinstance(categories, list):
@@ -39,12 +55,17 @@ class OpenAICompatibleMatcherLLM:
         *,
         chunks: list[tuple[int, str]],
         category_keys: list[str],
+        category_contexts: Sequence[dict[str, object]] | None = None,
     ) -> dict[int, list[str]]:
         _validate_unique_requested_chunk_ids(chunks)
         if not self.api_key:
             return {chunk_id: [] for chunk_id, _ in chunks}
 
-        messages = build_batch_category_messages(chunks=chunks, category_keys=category_keys)
+        messages = build_batch_category_messages(
+            chunks=chunks,
+            category_keys=category_keys,
+            category_contexts=category_contexts,
+        )
         payload = await self._chat_json(messages)
         raw_results = payload.get("results")
         if not isinstance(raw_results, list):
@@ -157,6 +178,54 @@ class OpenAICompatibleMatcherLLM:
             grouped.setdefault(_get_chunk_id(chunk), [])
         return dict(grouped)
 
+    async def compare_document_rows(
+        self,
+        *,
+        document_title: str,
+        document_text: str,
+        entries: list[KnowledgeEntry],
+    ) -> list[dict[str, str]]:
+        if not self.api_key:
+            return []
+
+        messages = build_document_compare_messages(
+            document_title=document_title,
+            document_text=document_text,
+            entries=entries,
+        )
+        payload = await self._chat_json(messages, timeout_override=max(self.timeout, FULL_DOCUMENT_MIN_TIMEOUT_SECONDS))
+        raw_results = payload.get("results")
+        if not isinstance(raw_results, list):
+            raise ValueError("LLM document compare response must contain a list in 'results'.")
+
+        allowed_entry_ids = {entry.entry_id for entry in entries}
+        normalized_results: list[dict[str, str]] = []
+        for row in raw_results:
+            if not isinstance(row, dict):
+                continue
+
+            entry_id = str(row.get("entry_id", "")).strip()
+            chapter_title = str(row.get("chapter_title", "")).strip()
+            source_excerpt = str(row.get("source_excerpt", "")).strip()
+            difference_summary = str(row.get("difference_summary", "")).strip()
+            if (
+                not entry_id
+                or entry_id not in allowed_entry_ids
+                or not source_excerpt
+                or not difference_summary
+            ):
+                continue
+
+            normalized_results.append(
+                {
+                    "entry_id": entry_id,
+                    "chapter_title": chapter_title or "未识别标题",
+                    "source_excerpt": source_excerpt,
+                    "difference_summary": difference_summary,
+                }
+            )
+        return normalized_results
+
     async def translate_to_chinese(self, *, text: str) -> str:
         if not self.api_key:
             raise ValueError("Translation service is not configured.")
@@ -182,7 +251,26 @@ class OpenAICompatibleMatcherLLM:
             raise ValueError("LLM translation response must not be empty.")
         return normalized
 
-    async def _chat_json(self, messages: list[dict[str, str]]) -> dict:
+    async def _chat_json(self, messages: list[dict[str, str]], timeout_override: int | None = None) -> dict:
+        timeout = timeout_override or self.timeout
+        data = await self._post_chat_completion(messages, timeout=timeout)
+        try:
+            content = _extract_json_content(data)
+        except ValueError as exc:
+            if str(exc) != "LLM returned an empty assistant message.":
+                raise
+            content = await self._post_chat_completion_stream(messages, timeout=timeout)
+
+        try:
+            payload = json.loads(content)
+        except json.JSONDecodeError as exc:
+            raise ValueError("LLM response content is not valid JSON.") from exc
+
+        if not isinstance(payload, dict):
+            raise ValueError("LLM response JSON must be an object.")
+        return payload
+
+    async def _post_chat_completion(self, messages: list[dict[str, str]], *, timeout: int) -> dict:
         url = f"{self.base_url}/chat/completions"
         body = {
             "model": self.model,
@@ -194,20 +282,76 @@ class OpenAICompatibleMatcherLLM:
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            response = await client.post(url, headers=headers, json=body)
-            response.raise_for_status()
-            data = response.json()
+        last_error: Exception | None = None
+        for attempt in range(MAX_CHAT_RETRIES + 1):
+            try:
+                async with httpx.AsyncClient(timeout=timeout) as client:
+                    response = await client.post(url, headers=headers, json=body)
+                if response.status_code == 429 and attempt < MAX_CHAT_RETRIES:
+                    await asyncio.sleep(_resolve_retry_delay_seconds(response, attempt))
+                    continue
 
-        content = _extract_json_content(data)
-        try:
-            payload = json.loads(content)
-        except json.JSONDecodeError as exc:
-            raise ValueError("LLM response content is not valid JSON.") from exc
+                response.raise_for_status()
+                return response.json()
+            except httpx.ReadTimeout as exc:
+                last_error = exc
+                if attempt >= MAX_CHAT_RETRIES:
+                    raise
+                await asyncio.sleep(_resolve_backoff_delay_seconds(attempt))
+            except httpx.HTTPStatusError as exc:
+                last_error = exc
+                if exc.response.status_code != 429 or attempt >= MAX_CHAT_RETRIES:
+                    raise
+                await asyncio.sleep(_resolve_retry_delay_seconds(exc.response, attempt))
 
-        if not isinstance(payload, dict):
-            raise ValueError("LLM response JSON must be an object.")
-        return payload
+        assert last_error is not None
+        raise last_error
+
+    async def _post_chat_completion_stream(self, messages: list[dict[str, str]], *, timeout: int) -> str:
+        url = f"{self.base_url}/chat/completions"
+        body = {
+            "model": self.model,
+            "temperature": 0,
+            "messages": messages,
+            "response_format": {"type": "json_object"},
+            "stream": True,
+        }
+        headers = {
+            "Authorization": f"Bearer {self.api_key}",
+            "Content-Type": "application/json",
+        }
+        last_error: Exception | None = None
+        for attempt in range(MAX_CHAT_RETRIES + 1):
+            try:
+                async with httpx.AsyncClient(timeout=timeout) as client:
+                    async with client.stream("POST", url, headers=headers, json=body) as response:
+                        if response.status_code == 429 and attempt < MAX_CHAT_RETRIES:
+                            await asyncio.sleep(_resolve_retry_delay_seconds(response, attempt))
+                            continue
+
+                        response.raise_for_status()
+                        chunks: list[str] = []
+                        async for part in response.aiter_text():
+                            if part:
+                                chunks.append(part)
+
+                content = _extract_streamed_chat_content("".join(chunks))
+                if not content:
+                    raise ValueError("LLM stream returned no assistant content.")
+                return content
+            except httpx.ReadTimeout as exc:
+                last_error = exc
+                if attempt >= MAX_CHAT_RETRIES:
+                    raise
+                await asyncio.sleep(_resolve_backoff_delay_seconds(attempt))
+            except httpx.HTTPStatusError as exc:
+                last_error = exc
+                if exc.response.status_code != 429 or attempt >= MAX_CHAT_RETRIES:
+                    raise
+                await asyncio.sleep(_resolve_retry_delay_seconds(exc.response, attempt))
+
+        assert last_error is not None
+        raise last_error
 
 
 def _get_chunk_id(chunk: tuple[int, str] | dict[str, object]) -> int:
@@ -270,6 +414,8 @@ def _extract_json_content(data: object) -> str:
         raise ValueError("LLM response missing message object.")
 
     content = message.get("content")
+    if content is None:
+        raise ValueError("LLM returned an empty assistant message.")
     if isinstance(content, str):
         return content
 
@@ -280,6 +426,44 @@ def _extract_json_content(data: object) -> str:
             return combined
 
     raise ValueError("LLM response has invalid content shape.")
+
+
+def _extract_streamed_chat_content(stream_text: str) -> str:
+    content_parts: list[str] = []
+    for block in stream_text.split("\n\n"):
+        if not block.strip():
+            continue
+        for line in block.splitlines():
+            if not line.startswith("data: "):
+                continue
+            data = line[len("data: "):].strip()
+            if not data or data == "[DONE]":
+                continue
+            try:
+                payload = json.loads(data)
+            except json.JSONDecodeError:
+                continue
+            choices = payload.get("choices")
+            if not isinstance(choices, list) or not choices:
+                continue
+            first_choice = choices[0]
+            if not isinstance(first_choice, dict):
+                continue
+            delta = first_choice.get("delta")
+            if not isinstance(delta, dict):
+                continue
+            content = delta.get("content")
+            if isinstance(content, str):
+                content_parts.append(content)
+                continue
+            if isinstance(content, list):
+                for item in content:
+                    if not isinstance(item, dict):
+                        continue
+                    text = item.get("text")
+                    if isinstance(text, str):
+                        content_parts.append(text)
+    return "".join(content_parts).strip()
 
 
 def _dedupe_strings_preserve_order(values: list[str]) -> list[str]:
@@ -324,3 +508,14 @@ def _validate_unique_requested_chunk_ids(chunks: Sequence[tuple[int, str] | dict
         if chunk_id in seen_chunk_ids:
             raise ValueError("Batch request contains duplicate chunk_id values.")
         seen_chunk_ids.add(chunk_id)
+
+
+def _resolve_retry_delay_seconds(response: httpx.Response, attempt: int) -> float:
+    retry_after = response.headers.get("Retry-After", "").strip()
+    if retry_after.isdigit():
+        return max(float(retry_after), BASE_RETRY_DELAY_SECONDS)
+    return _resolve_backoff_delay_seconds(attempt)
+
+
+def _resolve_backoff_delay_seconds(attempt: int) -> float:
+    return BASE_RETRY_DELAY_SECONDS * (2**attempt)

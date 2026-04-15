@@ -2,17 +2,17 @@ from io import BytesIO
 
 from openpyxl import load_workbook
 
-from app.schemas import Chunk, ChunkCompareResult, MatchItem
+from app.schemas import CompareRow
 from app.services.export_service import build_export_workbook
 
 
 EXPECTED_HEADERS = (
     "序号",
-    "询价文件章节标题",
-    "询价文件章节原文",
-    "标准偏差类型",
-    "标准偏差原文",
-    "标准偏差分类",
+    "章节标题",
+    "询价文件原文段落或句子",
+    "知识库标准化配套条目的原文",
+    "大模型总结的差异结论",
+    "分类",
     "审核意见",
     "审核状态",
 )
@@ -24,174 +24,41 @@ def _load_first_sheet_rows(blob: bytes) -> list[tuple[object, ...]]:
     return list(sheet.iter_rows(values_only=True))
 
 
-def _load_workbook(blob: bytes):
-    return load_workbook(BytesIO(blob))
-
-
-def test_export_workbook_writes_expected_headers_and_matched_row() -> None:
-    chunks = [
-        Chunk(chunk_id=7, source="demo.pdf", heading="1.1", level=2, line_no=1, content="content 1"),
-    ]
-    results = [
-        ChunkCompareResult(
-            chunk_id=7,
-            heading="1.1",
-            content="content 1",
-            categories=["分类A"],
-            matches=[
-                MatchItem(
-                    entry_id="A-1",
-                    category="分类A",
-                    text="符合API 610",
-                    type_code="P",
-                    reason="语义一致",
-                )
-            ],
-            label="命中",
+def test_export_workbook_writes_expected_headers_and_compare_rows() -> None:
+    rows = [
+        CompareRow(
+            row_id="row-1",
+            chapter_title="6 DOCUMENTATION",
+            source_excerpt="Vendor shall provide the appendices in Russian and English.",
+            kb_entry_id="General Specification-12",
+            kb_entry_text="产品资料仅提供中英文版本。",
+            difference_summary="部分满足：甲方要求附录提供俄语和英语版本，而我方标准仅支持中英文，需要与甲方澄清。",
+            type_code="P",
+            review_comment="已提醒销售澄清语言范围。",
             review_status="已审",
         )
     ]
 
-    rows = _load_first_sheet_rows(
-        build_export_workbook(
-            chunks=chunks,
-            results_by_kb={"标准化配套知识库.json": results},
-            sheet_names_by_kb={"标准化配套知识库.json": "标准化配套结果"},
-        )
+    exported_rows = _load_first_sheet_rows(build_export_workbook(rows=rows, title="标准化配套结果"))
+
+    assert exported_rows[0] == EXPECTED_HEADERS
+    assert exported_rows[1] == (
+        1,
+        "6 DOCUMENTATION",
+        "Vendor shall provide the appendices in Russian and English.",
+        "产品资料仅提供中英文版本。",
+        "部分满足：甲方要求附录提供俄语和英语版本，而我方标准仅支持中英文，需要与甲方澄清。",
+        "P",
+        "已提醒销售澄清语言范围。",
+        "已审",
     )
-
-    assert rows[0] == EXPECTED_HEADERS
-    assert rows[1] == (1, "1.1", "content 1", "分类A", "符合API 610", "P", "语义一致", "已审")
-    assert len(rows) == 2
+    assert len(exported_rows) == 2
 
 
-def test_export_workbook_writes_other_row_for_unmatched_chunk() -> None:
-    chunks = [
-        Chunk(chunk_id=42, source="demo.pdf", heading="2.3", level=2, line_no=9, content="content 2"),
-    ]
-    results = [
-        ChunkCompareResult(
-            chunk_id=42,
-            heading="2.3",
-            content="content 2",
-            categories=[],
-            matches=[],
-            label="其他",
-            review_status="未审",
-        )
-    ]
+def test_export_workbook_does_not_append_other_rows_for_unmatched_content() -> None:
+    rows = []
 
-    rows = _load_first_sheet_rows(
-        build_export_workbook(
-            chunks=chunks,
-            results_by_kb={"标准化配套知识库.json": results},
-            sheet_names_by_kb={"标准化配套知识库.json": "标准化配套结果"},
-        )
-    )
+    exported_rows = _load_first_sheet_rows(build_export_workbook(rows=rows, title="标准化配套结果"))
 
-    assert rows[0] == EXPECTED_HEADERS
-    assert rows[1] == (1, "2.3", "content 2", None, None, "OTHER", None, "未审")
-    assert len(rows) == 2
-
-
-def test_export_workbook_preserves_chunk_order_for_missing_result_fallback() -> None:
-    chunks = [
-        Chunk(chunk_id=1, source="demo.pdf", heading="1.1", level=2, line_no=1, content="content 1"),
-        Chunk(chunk_id=2, source="demo.pdf", heading="1.2", level=2, line_no=2, content="content 2"),
-    ]
-    results = [
-        ChunkCompareResult(
-            chunk_id=2,
-            heading="1.2",
-            content="content 2",
-            categories=["分类B"],
-            matches=[
-                MatchItem(
-                    entry_id="B-1",
-                    category="分类B",
-                    text="符合GB/T 123",
-                    type_code="B",
-                    reason="语义一致",
-                )
-            ],
-            label="命中",
-            review_status="未审",
-        )
-    ]
-
-    rows = _load_first_sheet_rows(
-        build_export_workbook(
-            chunks=chunks,
-            results_by_kb={"标准化配套知识库.json": results},
-            sheet_names_by_kb={"标准化配套知识库.json": "标准化配套结果"},
-        )
-    )
-
-    assert rows[0] == EXPECTED_HEADERS
-    assert rows[1] == (1, "1.1", "content 1", None, None, "OTHER", None, "未审")
-    assert rows[2] == (2, "1.2", "content 2", "分类B", "符合GB/T 123", "B", "语义一致", "未审")
-    assert len(rows) == 3
-
-
-def test_export_workbook_writes_separate_sheets_for_multiple_knowledge_bases() -> None:
-    chunks = [
-        Chunk(chunk_id=1, source="demo.pdf", heading="1.1", level=2, line_no=1, content="content 1"),
-    ]
-    standard_results = [
-        ChunkCompareResult(
-            chunk_id=1,
-            heading="1.1",
-            content="content 1",
-            categories=["分类A"],
-            matches=[
-                MatchItem(
-                    entry_id="A-1",
-                    category="分类A",
-                    text="符合API 610",
-                    type_code="P",
-                    reason="语义一致",
-                )
-            ],
-            label="命中",
-            review_status="已审",
-        )
-    ]
-    tender_results = [
-        ChunkCompareResult(
-            chunk_id=1,
-            heading="1.1",
-            content="content 1",
-            categories=["非强制-报价行动"],
-            matches=[
-                MatchItem(
-                    entry_id="投标说明-1",
-                    category="非强制-报价行动",
-                    text="Clarify the tender action.",
-                    type_code="非强制-报价行动",
-                    reason="语义一致",
-                )
-            ],
-            label="命中",
-            review_status="未审",
-        )
-    ]
-
-    workbook = _load_workbook(
-        build_export_workbook(
-            chunks=chunks,
-            results_by_kb={
-                "标准化配套知识库.json": standard_results,
-                "投标说明知识库.json": tender_results,
-            },
-            sheet_names_by_kb={
-                "标准化配套知识库.json": "标准化配套结果",
-                "投标说明知识库.json": "投标说明结果",
-            },
-        )
-    )
-
-    assert workbook.sheetnames == ["标准化配套结果", "投标说明结果"]
-
-    tender_rows = list(workbook["投标说明结果"].iter_rows(values_only=True))
-    assert tender_rows[0] == EXPECTED_HEADERS
-    assert tender_rows[1] == (1, "1.1", "content 1", "非强制-报价行动", "Clarify the tender action.", "非强制-报价行动", "语义一致", "未审")
+    assert exported_rows[0] == EXPECTED_HEADERS
+    assert len(exported_rows) == 1

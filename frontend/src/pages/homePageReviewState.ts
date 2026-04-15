@@ -1,4 +1,30 @@
-import type { ChunkCompareResult, MatchItem, ReviewStatus } from "../types";
+import type { ChunkCompareResult, CompareRow, MatchItem, ReviewStatus } from "../types";
+
+export function normalizeCompareRow(row: Omit<CompareRow, "review_status"> & { review_status?: ReviewStatus }): CompareRow {
+  return {
+    ...row,
+    review_status: row.review_status ?? "未审",
+  };
+}
+
+export function markCompareRowReviewed(row: CompareRow): CompareRow {
+  return {
+    ...row,
+    review_status: "已审",
+  };
+}
+
+export function updateCompareRowReviewComment(row: CompareRow, reviewComment: string): CompareRow {
+  return {
+    ...row,
+    review_comment: reviewComment,
+    review_status: "未审",
+  };
+}
+
+export function removeCompareRow(rows: CompareRow[], rowId: string): CompareRow[] {
+  return rows.filter((row) => row.row_id !== rowId);
+}
 
 const DEFAULT_OTHER_REASON = "未命中知识库条目，归类为其他。";
 
