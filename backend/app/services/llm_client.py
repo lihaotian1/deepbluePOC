@@ -208,6 +208,7 @@ class OpenAICompatibleMatcherLLM:
             chapter_title = str(row.get("chapter_title", "")).strip()
             source_excerpt = str(row.get("source_excerpt", "")).strip()
             difference_summary = str(row.get("difference_summary", "")).strip()
+            difference_summary_brief = str(row.get("difference_summary_brief", "")).strip()
             if (
                 not entry_id
                 or entry_id not in allowed_entry_ids
@@ -221,6 +222,7 @@ class OpenAICompatibleMatcherLLM:
                     "entry_id": entry_id,
                     "chapter_title": chapter_title or "未识别标题",
                     "source_excerpt": source_excerpt,
+                    "difference_summary_brief": difference_summary_brief or difference_summary,
                     "difference_summary": difference_summary,
                 }
             )

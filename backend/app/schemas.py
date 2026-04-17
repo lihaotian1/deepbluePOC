@@ -69,6 +69,7 @@ class CompareRow(BaseModel):
     source_excerpt: str
     kb_entry_id: str
     kb_entry_text: str
+    difference_summary_brief: str
     difference_summary: str
     type_code: Literal["P", "A", "B", "C"]
     review_comment: str = ""

@@ -92,7 +92,8 @@ def test_compare_document_rows_retries_http_429_before_succeeding(monkeypatch) -
                             "entry_id": "kb-1",
                             "chapter_title": "1 总则",
                             "source_excerpt": "source",
-                            "difference_summary": "部分满足：需要澄清。",
+                            "difference_summary": "存在冲突：需要澄清。",
+                            "difference_summary_brief": "需要澄清。",
                         }
                     ]
                 }
@@ -123,6 +124,7 @@ def test_compare_document_rows_retries_http_429_before_succeeding(monkeypatch) -
 
     assert len(rows) == 1
     assert rows[0]["entry_id"] == "kb-1"
+    assert rows[0]["difference_summary_brief"] == "需要澄清。"
     assert sleep_calls == [1.0]
 
 
@@ -139,6 +141,7 @@ def test_compare_document_rows_retries_read_timeout_before_succeeding(monkeypatc
                             "chapter_title": "1 总则",
                             "source_excerpt": "source",
                             "difference_summary": "直接满足：可满足。",
+                            "difference_summary_brief": "可直接满足。",
                         }
                     ]
                 }
@@ -169,6 +172,7 @@ def test_compare_document_rows_retries_read_timeout_before_succeeding(monkeypatc
 
     assert len(rows) == 1
     assert rows[0]["difference_summary"] == "直接满足：可满足。"
+    assert rows[0]["difference_summary_brief"] == "可直接满足。"
     assert sleep_calls == [1.0]
 
 

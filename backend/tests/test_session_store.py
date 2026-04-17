@@ -9,6 +9,7 @@ def build_row(*, row_id: str, summary: str) -> CompareRow:
         source_excerpt="source excerpt",
         kb_entry_id="kb-1",
         kb_entry_text="标准条目",
+        difference_summary_brief="一句话总结",
         difference_summary=summary,
         type_code="P",
         review_comment="",

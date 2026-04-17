@@ -340,7 +340,7 @@ function HomePage() {
                     <th>章节标题</th>
                     <th>询价文件的原文段落或句子</th>
                     <th>知识库标准化配套条目的原文</th>
-                    <th>大模型总结的差异结论</th>
+                    <th>差异结论</th>
                     <th>分类</th>
                   </tr>
                 </thead>
@@ -356,7 +356,7 @@ function HomePage() {
                       <td>{row.source_excerpt}</td>
                       <td>{row.kb_entry_text}</td>
                       <td>
-                        <span className={`summary-tone summary-tone--${resolveSummaryTone(row.difference_summary)}`}>{row.difference_summary}</span>
+                        <span className={`summary-tone summary-tone--${resolveSummaryTone(row.difference_summary)}`}>{row.difference_summary_brief}</span>
                       </td>
                       <td>
                         <span className={`table-type-pill table-type-pill--${row.type_code.toLowerCase()}`}>{row.type_code}</span>
@@ -417,6 +417,11 @@ function HomePage() {
 
             <div className="result-drawer__section">
               <span className="muted">差异结论</span>
+              <div className={`summary-tone summary-tone--${resolveSummaryTone(activeRow.difference_summary)}`}>{activeRow.difference_summary_brief}</div>
+            </div>
+
+            <div className="result-drawer__section">
+              <span className="muted">详细差异说明</span>
               <div className={`summary-tone summary-tone--${resolveSummaryTone(activeRow.difference_summary)}`}>{activeRow.difference_summary}</div>
             </div>
 

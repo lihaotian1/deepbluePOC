@@ -47,6 +47,7 @@ export interface CompareRow {
   source_excerpt: string;
   kb_entry_id: string;
   kb_entry_text: string;
+  difference_summary_brief: string;
   difference_summary: string;
   type_code: "P" | "A" | "B" | "C";
   review_comment: string;

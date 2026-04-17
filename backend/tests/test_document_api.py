@@ -44,7 +44,8 @@ def test_review_update_persists_compare_rows_and_submission_state() -> None:
                     "source_excerpt": "这是正文。",
                     "kb_entry_id": "分类A-1",
                     "kb_entry_text": "标准条目原文",
-                    "difference_summary": "部分满足：存在语言范围差异，需要与甲方澄清。",
+                    "difference_summary_brief": "语言范围存在冲突。",
+                    "difference_summary": "存在冲突：存在语言范围差异，需要与甲方澄清。",
                     "type_code": "P",
                     "review_comment": "人工审核意见",
                     "review_status": "已审",
@@ -62,4 +63,5 @@ def test_review_update_persists_compare_rows_and_submission_state() -> None:
     session = app.state.session_store.get(doc_id)
     assert session is not None
     assert session.submitted_for_review is True
-    assert session.compare_rows[0].difference_summary.startswith("部分满足：")
+    assert session.compare_rows[0].difference_summary.startswith("存在冲突：")
+    assert session.compare_rows[0].difference_summary_brief == "语言范围存在冲突。"

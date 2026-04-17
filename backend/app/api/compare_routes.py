@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -39,6 +40,83 @@ def _format_compare_error_message(exc: Exception) -> str:
     if message:
         return message
     return exc.__class__.__name__
+
+
+def _is_conflict_summary(summary: str) -> bool:
+    return summary.startswith("存在冲突：")
+
+
+def _normalize_excerpt_for_compare(text: str) -> str:
+    normalized = re.sub(r"\s+", " ", text).strip().lower()
+    normalized = normalized.replace("–", "-").replace("—", "-")
+    return normalized
+
+
+def _looks_like_same_requirement(left: str, right: str) -> bool:
+    if left == right:
+        return True
+    if left in right or right in left:
+        return True
+
+    left_tokens = {token for token in re.split(r"[^a-z0-9\u4e00-\u9fff]+", left) if token}
+    right_tokens = {token for token in re.split(r"[^a-z0-9\u4e00-\u9fff]+", right) if token}
+    if not left_tokens or not right_tokens:
+        return False
+
+    overlap = len(left_tokens & right_tokens)
+    smaller = min(len(left_tokens), len(right_tokens))
+    return smaller > 0 and overlap / smaller >= 0.8
+
+
+def _same_brief_summary(left: str, right: str) -> bool:
+    return left.strip() and right.strip() and left.strip() == right.strip()
+
+
+def _pick_preferred_row(current: CompareRow, candidate: CompareRow) -> CompareRow:
+    current_conflict = _is_conflict_summary(current.difference_summary)
+    candidate_conflict = _is_conflict_summary(candidate.difference_summary)
+    if candidate_conflict and not current_conflict:
+        return candidate
+    if current_conflict and not candidate_conflict:
+        return current
+    if len(candidate.source_excerpt) > len(current.source_excerpt):
+        return candidate
+    return current
+
+
+def _coalesce_compare_rows(rows: list[CompareRow]) -> list[CompareRow]:
+    grouped: dict[str, list[CompareRow]] = {}
+    for row in rows:
+        grouped.setdefault(row.kb_entry_id, []).append(row)
+
+    merged_rows: list[CompareRow] = []
+    for entry_rows in grouped.values():
+        has_conflict = any(_is_conflict_summary(row.difference_summary) for row in entry_rows)
+        filtered_rows = [row for row in entry_rows if _is_conflict_summary(row.difference_summary)] if has_conflict else entry_rows
+
+        entry_merged: list[CompareRow] = []
+        for row in filtered_rows:
+            normalized_excerpt = _normalize_excerpt_for_compare(row.source_excerpt)
+            matched_index = next(
+                (
+                    index
+                    for index, existing in enumerate(entry_merged)
+                    if (
+                        _same_brief_summary(row.difference_summary_brief, existing.difference_summary_brief)
+                        or _looks_like_same_requirement(normalized_excerpt, _normalize_excerpt_for_compare(existing.source_excerpt))
+                    )
+                ),
+                None,
+            )
+            if matched_index is None:
+                entry_merged.append(row)
+                continue
+
+            entry_merged[matched_index] = _pick_preferred_row(entry_merged[matched_index], row)
+
+        merged_rows.extend(entry_merged)
+
+    return merged_rows
 
 
 @router.post("/{doc_id}/compare/stream")
@@ -107,11 +185,13 @@ async def compare_stream(
                     source_excerpt=source_excerpt,
                     kb_entry_id=entry.entry_id,
                     kb_entry_text=entry.text,
+                    difference_summary_brief=row.get("difference_summary_brief", row["difference_summary"]),
                     difference_summary=row["difference_summary"],
                     type_code=entry.type_code if entry.type_code in {"P", "A", "B", "C"} else "C",
                 )
             )
 
+        compare_rows = _coalesce_compare_rows(compare_rows)
         store.save_compare_rows(doc_id, compare_rows)
 
         total = len(compare_rows)
