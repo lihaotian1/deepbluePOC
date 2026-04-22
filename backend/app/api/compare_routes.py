@@ -147,6 +147,94 @@ async def compare_stream(
             },
         )
 
+        entry_map = {entry.entry_id: entry for entry in kb.entries}
+        def build_compare_row(row: dict[str, str]) -> CompareRow | None:
+            entry_id = row["entry_id"]
+            source_excerpt = row["source_excerpt"]
+            entry = entry_map.get(entry_id)
+            if entry is None:
+                return None
+            return CompareRow(
+                row_id=_build_row_id(entry_id, source_excerpt),
+                chapter_title=row["chapter_title"],
+                source_excerpt=source_excerpt,
+                kb_entry_id=entry.entry_id,
+                kb_entry_text=entry.text,
+                difference_summary_brief=row.get("difference_summary_brief", row["difference_summary"]),
+                difference_summary=row["difference_summary"],
+                type_code=entry.type_code if entry.type_code in {"P", "A", "B", "C"} else "C",
+            )
+
+        if hasattr(llm, "stream_compare_document_rows"):
+            compare_rows: list[CompareRow] = []
+            current_rows: list[CompareRow] = []
+            current_rows_by_id: dict[str, CompareRow] = {}
+            seen_pairs: set[tuple[str, str]] = set()
+            try:
+                async for row in llm.stream_compare_document_rows(
+                    document_title=session.source_file_name,
+                    document_text=session.document_text,
+                    entries=kb.entries,
+                ):
+                    entry_id = row["entry_id"]
+                    source_excerpt = row["source_excerpt"]
+                    dedupe_key = (entry_id, source_excerpt)
+                    if dedupe_key in seen_pairs:
+                        continue
+
+                    next_row = build_compare_row(row)
+                    if next_row is None:
+                        continue
+
+                    seen_pairs.add(dedupe_key)
+                    compare_rows.append(next_row)
+
+                    next_rows = _coalesce_compare_rows(compare_rows)
+                    next_rows_by_id = {item.row_id: item for item in next_rows}
+
+                    for removed_row_id in current_rows_by_id.keys() - next_rows_by_id.keys():
+                        yield _sse_event(
+                            "compare_row_remove",
+                            {
+                                "doc_id": doc_id,
+                                "row_id": removed_row_id,
+                            },
+                        )
+
+                    for row_id, emitted_row in next_rows_by_id.items():
+                        existing = current_rows_by_id.get(row_id)
+                        if existing is not None and existing.model_dump() == emitted_row.model_dump():
+                            continue
+                        yield _sse_event(
+                            "compare_row",
+                            {
+                                "doc_id": doc_id,
+                                "result": emitted_row.model_dump(),
+                            },
+                        )
+
+                    current_rows = next_rows
+                    current_rows_by_id = next_rows_by_id
+                    store.save_compare_rows(doc_id, current_rows)
+            except Exception as exc:
+                yield _sse_event(
+                    "error",
+                    {
+                        "doc_id": doc_id,
+                        "message": _format_compare_error_message(exc),
+                    },
+                )
+                return
+
+            yield _sse_event(
+                "compare_done",
+                {
+                    "doc_id": doc_id,
+                    "row_count": len(current_rows),
+                },
+            )
+            return
+
         try:
             raw_rows = await llm.compare_document_rows(
                 document_title=session.source_file_name,
@@ -163,45 +251,30 @@ async def compare_stream(
             )
             return
 
-        entry_map = {entry.entry_id: entry for entry in kb.entries}
         compare_rows: list[CompareRow] = []
         seen_pairs: set[tuple[str, str]] = set()
         for row in raw_rows:
-            entry_id = row["entry_id"]
-            source_excerpt = row["source_excerpt"]
-            dedupe_key = (entry_id, source_excerpt)
-            if dedupe_key in seen_pairs:
-                continue
+                entry_id = row["entry_id"]
+                source_excerpt = row["source_excerpt"]
+                dedupe_key = (entry_id, source_excerpt)
+                if dedupe_key in seen_pairs:
+                    continue
 
-            entry = entry_map.get(entry_id)
-            if entry is None:
-                continue
+                next_row = build_compare_row(row)
+                if next_row is None:
+                    continue
 
-            seen_pairs.add(dedupe_key)
-            compare_rows.append(
-                CompareRow(
-                    row_id=_build_row_id(entry_id, source_excerpt),
-                    chapter_title=row["chapter_title"],
-                    source_excerpt=source_excerpt,
-                    kb_entry_id=entry.entry_id,
-                    kb_entry_text=entry.text,
-                    difference_summary_brief=row.get("difference_summary_brief", row["difference_summary"]),
-                    difference_summary=row["difference_summary"],
-                    type_code=entry.type_code if entry.type_code in {"P", "A", "B", "C"} else "C",
-                )
-            )
+                seen_pairs.add(dedupe_key)
+                compare_rows.append(next_row)
 
         compare_rows = _coalesce_compare_rows(compare_rows)
         store.save_compare_rows(doc_id, compare_rows)
 
-        total = len(compare_rows)
-        for index, row in enumerate(compare_rows, start=1):
+        for row in compare_rows:
             yield _sse_event(
                 "compare_row",
                 {
                     "doc_id": doc_id,
-                    "index": index,
-                    "total": total,
                     "result": row.model_dump(),
                 },
             )
@@ -210,7 +283,7 @@ async def compare_stream(
             "compare_done",
             {
                 "doc_id": doc_id,
-                "row_count": total,
+                "row_count": len(compare_rows),
             },
         )
 

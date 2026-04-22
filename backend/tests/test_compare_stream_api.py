@@ -84,6 +84,31 @@ class BlankMessageFailureLLM:
         raise RuntimeError()
 
 
+class StreamingRowsLLM:
+    async def stream_compare_document_rows(self, *, document_title, document_text, entries):
+        yield {
+            "entry_id": entries[0].entry_id,
+            "chapter_title": "1 交付文件",
+            "source_excerpt": "Vendor shall provide 3D model in STEP format.",
+            "difference_summary": "直接满足：我方可提供 STEP 格式的 3D 模型。",
+            "difference_summary_brief": "可提供 STEP 格式 3D 模型。",
+        }
+        yield {
+            "entry_id": entries[0].entry_id,
+            "chapter_title": "1 交付文件",
+            "source_excerpt": "Vendor shall provide 3D model in STEP format and native CAD format.",
+            "difference_summary": "存在冲突：甲方还要求原生 CAD 格式，我方标准未覆盖，需要澄清。",
+            "difference_summary_brief": "还要求原生 CAD 格式，需澄清。",
+        }
+        yield {
+            "entry_id": entries[1].entry_id,
+            "chapter_title": "2 铭牌",
+            "source_excerpt": "Nameplate shall be provided in Chinese and English.",
+            "difference_summary": "直接满足：该要求在我方标准范围内。",
+            "difference_summary_brief": "铭牌语言要求可满足。",
+        }
+
+
 def _write_compare_files(kb_dir: Path) -> None:
     kb_dir.mkdir(parents=True, exist_ok=True)
     (kb_dir / STANDARD_KB_FILE_NAME).write_text(
@@ -123,7 +148,7 @@ def test_compare_stream_returns_row_events_for_full_document_results(tmp_path: P
         assert response.status_code == 200
         body = "".join(response.iter_text())
 
-    assert body.count("event: compare_row") == 2
+    assert body.count("event: compare_row\n") == 2
     assert '"chapter_title":"1 总则"' in body
     assert '"chapter_title":"2 铭牌"' in body
     assert '"source_excerpt":"这是正文。"' in body
@@ -188,8 +213,37 @@ def test_compare_stream_keeps_only_conflict_rows_for_same_entry_and_dedupes_dupl
         assert response.status_code == 200
         body = "".join(response.iter_text())
 
-    assert body.count("event: compare_row") == 2
+    assert body.count("event: compare_row\n") == 2
     assert '"difference_summary_brief":"还要求原生 CAD 格式，需澄清。"' in body
     assert '"difference_summary_brief":"可提供 STEP 格式 3D 模型。"' not in body
     assert body.count('"difference_summary_brief":"还要求原生 CAD 格式，需澄清。"') == 1
     assert '"difference_summary_brief":"铭牌语言要求可满足。"' in body
+
+
+def test_compare_stream_emits_incremental_add_and_remove_events_when_streaming_rows(tmp_path: Path) -> None:
+    kb_dir = tmp_path / "知识库"
+    _write_compare_files(kb_dir)
+
+    app = create_app()
+    app.state.knowledge_base_manager = KnowledgeBaseManager(kb_dir)
+    app.state.matcher_llm = StreamingRowsLLM()
+    client = TestClient(app)
+
+    content = "1 交付文件\n正文。\n"
+    upload_resp = client.post(
+        "/api/v1/documents/upload",
+        files={"file": ("demo.md", content.encode("utf-8"), "text/markdown")},
+    )
+    doc_id = upload_resp.json()["doc_id"]
+
+    with client.stream(
+        "POST",
+        f"/api/v1/documents/{doc_id}/compare/stream",
+    ) as response:
+        assert response.status_code == 200
+        body = "".join(response.iter_text())
+
+    assert body.count("event: compare_row\n") == 3
+    assert body.count("event: compare_row_remove\n") == 1
+    assert '"difference_summary_brief":"铭牌语言要求可满足。"' in body
+    assert '"difference_summary_brief":"还要求原生 CAD 格式，需澄清。"' in body

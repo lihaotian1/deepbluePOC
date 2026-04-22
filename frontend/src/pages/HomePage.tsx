@@ -9,6 +9,7 @@ import {
 import { streamCompare } from "../api/sse";
 import UploadPanel from "../components/UploadPanel";
 import { buildTypeFilterModel, filterCompareRowsByType, mergeCompareRow } from "./homePageCompareState";
+import { buildCompareDoneMessage, resolveHomePageStatusDotClass, type HomePageStatusTone } from "./homePageStatus";
 import {
   markCompareRowReviewed,
   normalizeCompareRow,
@@ -28,6 +29,7 @@ function HomePage() {
   const [documentText, setDocumentText] = useState("");
   const [compareRows, setCompareRows] = useState<CompareRow[]>([]);
   const [progressText, setProgressText] = useState("请上传文件");
+  const [statusTone, setStatusTone] = useState<HomePageStatusTone>("idle");
   const [activeFilter, setActiveFilter] = useState<ResultFilterType>("ALL");
   const [page, setPage] = useState(1);
   const [submittedForReview, setSubmittedForReview] = useState(false);
@@ -75,6 +77,7 @@ function HomePage() {
 
     setUploading(true);
     setProgressText("正在上传...");
+    setStatusTone("idle");
     try {
       const response = await uploadDocument(selectedFile);
       setDocId(response.doc_id);
@@ -87,8 +90,10 @@ function HomePage() {
       setPage(1);
       setPreviewExpanded(false);
       setProgressText("已准备就绪");
+      setStatusTone("idle");
     } catch (error) {
       setProgressText("上传失败，请检查后重试");
+      setStatusTone("error");
     } finally {
       setUploading(false);
     }
@@ -107,6 +112,7 @@ function HomePage() {
     setActiveRowId("");
     setPage(1);
     setProgressText("正在解析...");
+    setStatusTone("running");
 
     try {
       await streamCompare(
@@ -115,6 +121,7 @@ function HomePage() {
           const eventPayload = (payload || {}) as Record<string, unknown>;
           if (eventName === "compare_started") {
             setProgressText("正在解析...");
+            setStatusTone("running");
             return;
           }
 
@@ -127,18 +134,33 @@ function HomePage() {
             const normalizedRow = normalizeCompareRow(result);
             setCompareRows((prev) => mergeCompareRow(prev, normalizedRow));
             setProgressText("正在解析...");
+            setStatusTone("running");
+            return;
+          }
+
+          if (eventName === "compare_row_remove") {
+            const rowId = String(eventPayload.row_id || "");
+            if (!rowId) {
+              return;
+            }
+            setCompareRows((prev) => removeCompareRow(prev, rowId));
+            if (activeRowId === rowId) {
+              setActiveRowId("");
+            }
             return;
           }
 
           if (eventName === "compare_done") {
             const rowCount = Number(eventPayload.row_count || 0);
-            setProgressText(rowCount ? `已生成 ${rowCount} 条结果` : "未识别到可提示条目");
+            setProgressText(buildCompareDoneMessage(rowCount));
+            setStatusTone("done");
             return;
           }
 
           if (eventName === "error") {
             const message = String(eventPayload.message || "未知错误");
             setProgressText(message || "解析失败，请重试");
+            setStatusTone("error");
           }
         },
         () => undefined,
@@ -146,6 +168,7 @@ function HomePage() {
     } catch (error) {
       const message = error instanceof Error && error.message ? error.message : "解析失败，请重试";
       setProgressText(message);
+      setStatusTone("error");
     } finally {
       setComparing(false);
     }
@@ -280,7 +303,7 @@ function HomePage() {
           {submittedForReview ? <span className="compare-panel__submitted">已提交</span> : null}
         </div>
         <div className="compare-panel__status compare-panel__status--light">
-          <span className="pulse-dot pulse-dot--static" />
+          <span className={resolveHomePageStatusDotClass(statusTone)} />
           <span>{progressText}</span>
           <span className="compare-panel__status-meta">已审 {reviewedCount}/{compareRows.length}</span>
         </div>

@@ -188,45 +188,46 @@ class OpenAICompatibleMatcherLLM:
         if not self.api_key:
             return []
 
+        output: list[dict[str, str]] = []
+        async for row in self.stream_compare_document_rows(
+            document_title=document_title,
+            document_text=document_text,
+            entries=entries,
+        ):
+            output.append(row)
+        return output
+
+    async def stream_compare_document_rows(
+        self,
+        *,
+        document_title: str,
+        document_text: str,
+        entries: list[KnowledgeEntry],
+    ):
+        if not self.api_key:
+            return
+
         messages = build_document_compare_messages(
             document_title=document_title,
             document_text=document_text,
             entries=entries,
         )
-        payload = await self._chat_json(messages, timeout_override=max(self.timeout, FULL_DOCUMENT_MIN_TIMEOUT_SECONDS))
-        raw_results = payload.get("results")
-        if not isinstance(raw_results, list):
-            raise ValueError("LLM document compare response must contain a list in 'results'.")
-
         allowed_entry_ids = {entry.entry_id for entry in entries}
-        normalized_results: list[dict[str, str]] = []
-        for row in raw_results:
-            if not isinstance(row, dict):
-                continue
+        timeout = max(self.timeout, FULL_DOCUMENT_MIN_TIMEOUT_SECONDS)
+        buffer = ""
+        async for content_chunk in self._iter_chat_completion_stream_text(messages, timeout=timeout):
+            buffer += content_chunk
+            while "\n" in buffer:
+                line, buffer = buffer.split("\n", 1)
+                normalized = _normalize_document_compare_row(line, allowed_entry_ids)
+                if normalized is None:
+                    continue
+                yield normalized
 
-            entry_id = str(row.get("entry_id", "")).strip()
-            chapter_title = str(row.get("chapter_title", "")).strip()
-            source_excerpt = str(row.get("source_excerpt", "")).strip()
-            difference_summary = str(row.get("difference_summary", "")).strip()
-            difference_summary_brief = str(row.get("difference_summary_brief", "")).strip()
-            if (
-                not entry_id
-                or entry_id not in allowed_entry_ids
-                or not source_excerpt
-                or not difference_summary
-            ):
-                continue
-
-            normalized_results.append(
-                {
-                    "entry_id": entry_id,
-                    "chapter_title": chapter_title or "未识别标题",
-                    "source_excerpt": source_excerpt,
-                    "difference_summary_brief": difference_summary_brief or difference_summary,
-                    "difference_summary": difference_summary,
-                }
-            )
-        return normalized_results
+        if buffer.strip():
+            normalized = _normalize_document_compare_row(buffer, allowed_entry_ids)
+            if normalized is not None:
+                yield normalized
 
     async def translate_to_chinese(self, *, text: str) -> str:
         if not self.api_key:
@@ -310,6 +311,12 @@ class OpenAICompatibleMatcherLLM:
         raise last_error
 
     async def _post_chat_completion_stream(self, messages: list[dict[str, str]], *, timeout: int) -> str:
+        parts: list[str] = []
+        async for content in self._iter_chat_completion_stream_text(messages, timeout=timeout):
+            parts.append(content)
+        return "".join(parts).strip()
+
+    async def _iter_chat_completion_stream_text(self, messages: list[dict[str, str]], *, timeout: int):
         url = f"{self.base_url}/chat/completions"
         body = {
             "model": self.model,
@@ -323,7 +330,9 @@ class OpenAICompatibleMatcherLLM:
             "Content-Type": "application/json",
         }
         last_error: Exception | None = None
+        emitted_any_global = False
         for attempt in range(MAX_CHAT_RETRIES + 1):
+            emitted_any = False
             try:
                 async with httpx.AsyncClient(timeout=timeout) as client:
                     async with client.stream("POST", url, headers=headers, json=body) as response:
@@ -332,28 +341,33 @@ class OpenAICompatibleMatcherLLM:
                             continue
 
                         response.raise_for_status()
-                        chunks: list[str] = []
+                        sse_buffer = ""
                         async for part in response.aiter_text():
                             if part:
-                                chunks.append(part)
-
-                content = _extract_streamed_chat_content("".join(chunks))
-                if not content:
+                                sse_buffer += part
+                                while "\n\n" in sse_buffer:
+                                    block, sse_buffer = sse_buffer.split("\n\n", 1)
+                                    for content_part in _extract_streamed_chat_content_parts(block):
+                                        emitted_any = True
+                                        emitted_any_global = True
+                                        yield content_part
+                if not emitted_any_global:
                     raise ValueError("LLM stream returned no assistant content.")
-                return content
+                return
             except httpx.ReadTimeout as exc:
                 last_error = exc
-                if attempt >= MAX_CHAT_RETRIES:
+                if emitted_any or attempt >= MAX_CHAT_RETRIES:
                     raise
                 await asyncio.sleep(_resolve_backoff_delay_seconds(attempt))
             except httpx.HTTPStatusError as exc:
                 last_error = exc
-                if exc.response.status_code != 429 or attempt >= MAX_CHAT_RETRIES:
+                if emitted_any or exc.response.status_code != 429 or attempt >= MAX_CHAT_RETRIES:
                     raise
                 await asyncio.sleep(_resolve_retry_delay_seconds(exc.response, attempt))
 
-        assert last_error is not None
-        raise last_error
+        if last_error is not None:
+            raise last_error
+        raise ValueError("LLM stream returned no assistant content.")
 
 
 def _get_chunk_id(chunk: tuple[int, str] | dict[str, object]) -> int:
@@ -435,37 +449,78 @@ def _extract_streamed_chat_content(stream_text: str) -> str:
     for block in stream_text.split("\n\n"):
         if not block.strip():
             continue
-        for line in block.splitlines():
-            if not line.startswith("data: "):
-                continue
-            data = line[len("data: "):].strip()
-            if not data or data == "[DONE]":
-                continue
-            try:
-                payload = json.loads(data)
-            except json.JSONDecodeError:
-                continue
-            choices = payload.get("choices")
-            if not isinstance(choices, list) or not choices:
-                continue
-            first_choice = choices[0]
-            if not isinstance(first_choice, dict):
-                continue
-            delta = first_choice.get("delta")
-            if not isinstance(delta, dict):
-                continue
-            content = delta.get("content")
-            if isinstance(content, str):
-                content_parts.append(content)
-                continue
-            if isinstance(content, list):
-                for item in content:
-                    if not isinstance(item, dict):
-                        continue
-                    text = item.get("text")
-                    if isinstance(text, str):
-                        content_parts.append(text)
+        content_parts.extend(_extract_streamed_chat_content_parts(block))
     return "".join(content_parts).strip()
+
+
+def _extract_streamed_chat_content_parts(block: str) -> list[str]:
+    content_parts: list[str] = []
+    for line in block.splitlines():
+        if not line.startswith("data: "):
+            continue
+        data = line[len("data: "):].strip()
+        if not data or data == "[DONE]":
+            continue
+        try:
+            payload = json.loads(data)
+        except json.JSONDecodeError:
+            continue
+        choices = payload.get("choices")
+        if not isinstance(choices, list) or not choices:
+            continue
+        first_choice = choices[0]
+        if not isinstance(first_choice, dict):
+            continue
+        delta = first_choice.get("delta")
+        if not isinstance(delta, dict):
+            continue
+        content = delta.get("content")
+        if isinstance(content, str):
+            content_parts.append(content)
+            continue
+        if isinstance(content, list):
+            for item in content:
+                if not isinstance(item, dict):
+                    continue
+                text = item.get("text")
+                if isinstance(text, str):
+                    content_parts.append(text)
+    return content_parts
+
+
+def _normalize_document_compare_row(line: str, allowed_entry_ids: set[str]) -> dict[str, str] | None:
+    stripped = line.strip()
+    if not stripped:
+        return None
+    if not stripped.startswith("{"):
+        return None
+    try:
+        row = json.loads(stripped)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(row, dict):
+        return None
+
+    entry_id = str(row.get("entry_id", "")).strip()
+    chapter_title = str(row.get("chapter_title", "")).strip()
+    source_excerpt = str(row.get("source_excerpt", "")).strip()
+    difference_summary = str(row.get("difference_summary", "")).strip()
+    difference_summary_brief = str(row.get("difference_summary_brief", "")).strip()
+    if (
+        not entry_id
+        or entry_id not in allowed_entry_ids
+        or not source_excerpt
+        or not difference_summary
+    ):
+        return None
+
+    return {
+        "entry_id": entry_id,
+        "chapter_title": chapter_title or "未识别标题",
+        "source_excerpt": source_excerpt,
+        "difference_summary_brief": difference_summary_brief or difference_summary,
+        "difference_summary": difference_summary,
+    }
 
 
 def _dedupe_strings_preserve_order(values: list[str]) -> list[str]:

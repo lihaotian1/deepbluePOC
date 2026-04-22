@@ -67,13 +67,15 @@ def build_document_compare_messages(
         "4. 不要加“直接满足：”或“存在冲突：”前缀。"
         "5. 不需要展开细节，只保留最核心的判断结果。"
         "输出要求："
-        "1. 只返回 JSON。"
+        "1. 不要输出 markdown 代码块。"
         "2. 不要输出任何额外解释。"
-        "3. 返回格式固定为："
-        "{\"results\":[{\"entry_id\":\"string\",\"chapter_title\":\"string\",\"source_excerpt\":\"string\",\"difference_summary\":\"string\",\"difference_summary_brief\":\"string\"}]}"
-        "4. 如果没有任何“同一件事”的对应项，返回 {\"results\":[]}。"
-        "5. 禁止输出 kb_entries 中不存在的 entry_id。"
-        "6. 相同的 entry_id + 相同的 source_excerpt 只能输出一次。"
+        "3. 采用 JSON Lines 输出：每一行只输出一个 JSON 对象。"
+        "4. 每行格式固定为："
+        "{\"entry_id\":\"string\",\"chapter_title\":\"string\",\"source_excerpt\":\"string\",\"difference_summary\":\"string\",\"difference_summary_brief\":\"string\"}"
+        "5. 不要使用 results 数组包裹。"
+        "6. 如果没有任何“同一件事”的对应项，返回空文本，不要输出任何 JSON。"
+        "7. 禁止输出 kb_entries 中不存在的 entry_id。"
+        "8. 相同的 entry_id + 相同的 source_excerpt 只能输出一次。"
     )
     user_payload = {
         "document_title": document_title,
