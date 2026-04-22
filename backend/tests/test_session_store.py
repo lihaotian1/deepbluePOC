@@ -61,3 +61,20 @@ def test_save_compare_rows_replaces_previous_rows_and_resets_submission_state() 
     assert reviewed.submitted_for_review is True
     assert reviewed.compare_rows[0].row_id == "row-2"
     assert reviewed.compare_rows[0].review_status == "已审"
+
+
+def test_compare_cache_roundtrip_returns_independent_row_copies() -> None:
+    store = SessionStore()
+    rows = [build_row(row_id="row-1", summary="直接满足：标准条目可直接满足甲方要求。")]
+
+    store.save_compare_cache("cache-key", rows)
+    cached = store.get_compare_cache("cache-key")
+
+    assert cached is not None
+    assert len(cached) == 1
+    assert cached[0].row_id == "row-1"
+    cached[0].review_comment = "changed"
+
+    cached_again = store.get_compare_cache("cache-key")
+    assert cached_again is not None
+    assert cached_again[0].review_comment == ""

@@ -13,6 +13,7 @@ from app.schemas import CompareRow
 from app.services.compare_profiles import STANDARD_KB_FILE_NAME, get_compare_profile
 from app.services.knowledge_base_manager import KnowledgeBaseManager
 from app.services.llm_client import OpenAICompatibleMatcherLLM
+from app.services.prompt_builder import DOCUMENT_COMPARE_PIPELINE_VERSION
 from app.services.session_store import SessionStore
 
 
@@ -26,6 +27,29 @@ def _sse_event(event: str, data: dict) -> str:
 def _build_row_id(entry_id: str, source_excerpt: str) -> str:
     digest = hashlib.sha1(f"{entry_id}\n{source_excerpt}".encode("utf-8")).hexdigest()[:12]
     return f"{entry_id}::{digest}"
+
+
+def _build_compare_cache_key(*, document_text: str, kb_entries, model: str, base_url: str) -> str:
+    serialized = json.dumps(
+        {
+            "document_text": document_text,
+            "kb_entries": [
+                {
+                    "entry_id": entry.entry_id,
+                    "text": entry.text,
+                    "type_code": entry.type_code,
+                }
+                for entry in kb_entries
+            ],
+            "model": model,
+            "base_url": base_url,
+            "prompt_version": DOCUMENT_COMPARE_PIPELINE_VERSION,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return hashlib.sha256(serialized.encode("utf-8")).hexdigest()
 
 
 def _format_compare_error_message(exc: Exception) -> str:
@@ -137,6 +161,12 @@ async def compare_stream(
         raise HTTPException(status_code=404, detail="Knowledge base file not found") from exc
 
     kb = profile.loader(kb_path)
+    cache_key = _build_compare_cache_key(
+        document_text=session.document_text,
+        kb_entries=kb.entries,
+        model=getattr(llm, "model", "test-model"),
+        base_url=getattr(llm, "base_url", "test-base-url"),
+    )
 
     async def event_generator():
         yield _sse_event(
@@ -146,6 +176,26 @@ async def compare_stream(
                 "source_file_name": session.source_file_name,
             },
         )
+
+        cached_rows = store.get_compare_cache(cache_key)
+        if cached_rows is not None:
+            store.save_compare_rows(doc_id, cached_rows)
+            for row in cached_rows:
+                yield _sse_event(
+                    "compare_row",
+                    {
+                        "doc_id": doc_id,
+                        "result": row.model_dump(),
+                    },
+                )
+            yield _sse_event(
+                "compare_done",
+                {
+                    "doc_id": doc_id,
+                    "row_count": len(cached_rows),
+                },
+            )
+            return
 
         entry_map = {entry.entry_id: entry for entry in kb.entries}
         def build_compare_row(row: dict[str, str]) -> CompareRow | None:
@@ -233,6 +283,7 @@ async def compare_stream(
                     "row_count": len(current_rows),
                 },
             )
+            store.save_compare_cache(cache_key, current_rows)
             return
 
         try:
@@ -269,6 +320,7 @@ async def compare_stream(
 
         compare_rows = _coalesce_compare_rows(compare_rows)
         store.save_compare_rows(doc_id, compare_rows)
+        store.save_compare_cache(cache_key, compare_rows)
 
         for row in compare_rows:
             yield _sse_event(

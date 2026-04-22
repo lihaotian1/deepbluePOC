@@ -84,6 +84,21 @@ class BlankMessageFailureLLM:
         raise RuntimeError()
 
 
+class CacheAwareLLM:
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def stream_compare_document_rows(self, *, document_title, document_text, entries):
+        self.calls += 1
+        yield {
+            "entry_id": entries[0].entry_id,
+            "chapter_title": "1 总则",
+            "source_excerpt": "source",
+            "difference_summary": "存在冲突：需要澄清。",
+            "difference_summary_brief": "需要澄清。",
+        }
+
+
 class StreamingRowsLLM:
     async def stream_compare_document_rows(self, *, document_title, document_text, entries):
         yield {
@@ -247,3 +262,31 @@ def test_compare_stream_emits_incremental_add_and_remove_events_when_streaming_r
     assert body.count("event: compare_row_remove\n") == 1
     assert '"difference_summary_brief":"铭牌语言要求可满足。"' in body
     assert '"difference_summary_brief":"还要求原生 CAD 格式，需澄清。"' in body
+
+
+def test_compare_stream_reuses_cached_rows_without_reinvoking_llm(tmp_path: Path) -> None:
+    kb_dir = tmp_path / "知识库"
+    _write_compare_files(kb_dir)
+
+    app = create_app()
+    app.state.knowledge_base_manager = KnowledgeBaseManager(kb_dir)
+    llm = CacheAwareLLM()
+    app.state.matcher_llm = llm
+    client = TestClient(app)
+
+    content = "1 总则\n这是正文。\n"
+    upload_resp = client.post(
+        "/api/v1/documents/upload",
+        files={"file": ("demo.md", content.encode("utf-8"), "text/markdown")},
+    )
+    doc_id = upload_resp.json()["doc_id"]
+
+    for _ in range(2):
+        with client.stream(
+            "POST",
+            f"/api/v1/documents/{doc_id}/compare/stream",
+        ) as response:
+            assert response.status_code == 200
+            _ = "".join(response.iter_text())
+
+    assert llm.calls == 1

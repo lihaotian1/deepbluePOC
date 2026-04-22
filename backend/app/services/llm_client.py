@@ -9,7 +9,10 @@ import httpx
 
 from app.services.kb_loader import KnowledgeEntry
 from app.services.prompt_builder import (
+    DOCUMENT_COMPARE_PIPELINE_VERSION,
     build_batch_category_messages,
+    build_candidate_adjudication_messages,
+    build_document_candidate_messages,
     build_document_compare_messages,
     build_batch_item_messages,
     build_category_messages,
@@ -19,6 +22,7 @@ from app.services.prompt_builder import (
 MAX_CHAT_RETRIES = 2
 BASE_RETRY_DELAY_SECONDS = 1.0
 FULL_DOCUMENT_MIN_TIMEOUT_SECONDS = 180
+STABLE_TOP_P = 1.0
 
 
 class OpenAICompatibleMatcherLLM:
@@ -207,27 +211,48 @@ class OpenAICompatibleMatcherLLM:
         if not self.api_key:
             return
 
-        messages = build_document_compare_messages(
+        candidate_excerpts = await self.extract_document_candidates(
             document_title=document_title,
             document_text=document_text,
+        )
+        if not candidate_excerpts:
+            return
+
+        messages = build_candidate_adjudication_messages(
+            document_title=document_title,
+            candidate_excerpts=candidate_excerpts,
             entries=entries,
         )
         allowed_entry_ids = {entry.entry_id for entry in entries}
-        timeout = max(self.timeout, FULL_DOCUMENT_MIN_TIMEOUT_SECONDS)
-        buffer = ""
-        async for content_chunk in self._iter_chat_completion_stream_text(messages, timeout=timeout):
-            buffer += content_chunk
-            while "\n" in buffer:
-                line, buffer = buffer.split("\n", 1)
-                normalized = _normalize_document_compare_row(line, allowed_entry_ids)
-                if normalized is None:
-                    continue
-                yield normalized
+        async for row in self._stream_json_lines(
+            messages=messages,
+            timeout=max(self.timeout, FULL_DOCUMENT_MIN_TIMEOUT_SECONDS),
+            normalizer=lambda line: _normalize_document_compare_row(line, allowed_entry_ids),
+        ):
+            yield row
 
-        if buffer.strip():
-            normalized = _normalize_document_compare_row(buffer, allowed_entry_ids)
-            if normalized is not None:
-                yield normalized
+    async def extract_document_candidates(
+        self,
+        *,
+        document_title: str,
+        document_text: str,
+    ) -> list[dict[str, str]]:
+        if not self.api_key:
+            return []
+
+        messages = build_document_candidate_messages(
+            document_title=document_title,
+            document_text=document_text,
+        )
+        candidates: list[dict[str, str]] = []
+        async for row in self._stream_json_lines(
+            messages=messages,
+            timeout=max(self.timeout, FULL_DOCUMENT_MIN_TIMEOUT_SECONDS),
+            normalizer=_normalize_candidate_excerpt_row,
+        ):
+            candidates.append(row)
+
+        return _dedupe_candidate_excerpts(candidates)
 
     async def translate_to_chinese(self, *, text: str) -> str:
         if not self.api_key:
@@ -278,6 +303,7 @@ class OpenAICompatibleMatcherLLM:
         body = {
             "model": self.model,
             "temperature": 0,
+            "top_p": STABLE_TOP_P,
             "messages": messages,
             "response_format": {"type": "json_object"},
         }
@@ -321,6 +347,7 @@ class OpenAICompatibleMatcherLLM:
         body = {
             "model": self.model,
             "temperature": 0,
+            "top_p": STABLE_TOP_P,
             "messages": messages,
             "response_format": {"type": "json_object"},
             "stream": True,
@@ -368,6 +395,22 @@ class OpenAICompatibleMatcherLLM:
         if last_error is not None:
             raise last_error
         raise ValueError("LLM stream returned no assistant content.")
+
+    async def _stream_json_lines(self, *, messages: list[dict[str, str]], timeout: int, normalizer):
+        buffer = ""
+        async for content_chunk in self._iter_chat_completion_stream_text(messages, timeout=timeout):
+            buffer += content_chunk
+            while "\n" in buffer:
+                line, buffer = buffer.split("\n", 1)
+                normalized = normalizer(line)
+                if normalized is None:
+                    continue
+                yield normalized
+
+        if buffer.strip():
+            normalized = normalizer(buffer)
+            if normalized is not None:
+                yield normalized
 
 
 def _get_chunk_id(chunk: tuple[int, str] | dict[str, object]) -> int:
@@ -521,6 +564,68 @@ def _normalize_document_compare_row(line: str, allowed_entry_ids: set[str]) -> d
         "difference_summary_brief": difference_summary_brief or difference_summary,
         "difference_summary": difference_summary,
     }
+
+
+def _normalize_candidate_excerpt_row(line: str) -> dict[str, str] | None:
+    stripped = line.strip()
+    if not stripped or not stripped.startswith("{"):
+        return None
+    try:
+        row = json.loads(stripped)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(row, dict):
+        return None
+
+    chapter_title = str(row.get("chapter_title", "")).strip() or "未识别标题"
+    source_excerpt = str(row.get("source_excerpt", "")).strip()
+    if not source_excerpt:
+        return None
+
+    return {
+        "chapter_title": chapter_title,
+        "source_excerpt": source_excerpt,
+    }
+
+
+def _dedupe_candidate_excerpts(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    unique_rows: list[dict[str, str]] = []
+    for row in rows:
+        normalized_excerpt = _normalize_text_for_candidate_compare(row["source_excerpt"])
+        matched_index = next(
+            (
+                index
+                for index, existing in enumerate(unique_rows)
+                if _candidate_rows_match(normalized_excerpt, _normalize_text_for_candidate_compare(existing["source_excerpt"]))
+            ),
+            None,
+        )
+        if matched_index is None:
+            unique_rows.append(row)
+            continue
+
+        if len(row["source_excerpt"]) > len(unique_rows[matched_index]["source_excerpt"]):
+            unique_rows[matched_index] = row
+    return unique_rows
+
+
+def _candidate_rows_match(left: str, right: str) -> bool:
+    if left == right:
+        return True
+    if left in right or right in left:
+        return True
+
+    left_tokens = {token for token in left.split(" ") if token}
+    right_tokens = {token for token in right.split(" ") if token}
+    if not left_tokens or not right_tokens:
+        return False
+    overlap = len(left_tokens & right_tokens)
+    smaller = min(len(left_tokens), len(right_tokens))
+    return smaller > 0 and overlap / smaller >= 0.85
+
+
+def _normalize_text_for_candidate_compare(text: str) -> str:
+    return " ".join(text.lower().split())
 
 
 def _dedupe_strings_preserve_order(values: list[str]) -> list[str]:

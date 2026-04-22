@@ -114,6 +114,9 @@ def test_compare_document_rows_retries_http_429_before_succeeding(monkeypatch) -
         model="demo-model",
         timeout=60,
     )
+    async def fake_extract_document_candidates(*, document_title, document_text):
+        return [{"chapter_title": "1 总则", "source_excerpt": "source"}]
+    client.extract_document_candidates = fake_extract_document_candidates
     rows = asyncio.run(
         client.compare_document_rows(
             document_title="demo.pdf",
@@ -153,6 +156,9 @@ def test_compare_document_rows_retries_read_timeout_before_succeeding(monkeypatc
         model="demo-model",
         timeout=60,
     )
+    async def fake_extract_document_candidates(*, document_title, document_text):
+        return [{"chapter_title": "1 总则", "source_excerpt": "source"}]
+    client.extract_document_candidates = fake_extract_document_candidates
     rows = asyncio.run(
         client.compare_document_rows(
             document_title="demo.pdf",
@@ -196,6 +202,9 @@ def test_compare_document_rows_reports_empty_assistant_messages_clearly(monkeypa
         model="demo-model",
         timeout=60,
     )
+    async def fake_extract_document_candidates(*, document_title, document_text):
+        return [{"chapter_title": "1 总则", "source_excerpt": "source"}]
+    client.extract_document_candidates = fake_extract_document_candidates
 
     try:
         asyncio.run(

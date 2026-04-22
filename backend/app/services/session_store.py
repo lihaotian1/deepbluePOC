@@ -9,6 +9,7 @@ from app.schemas import CompareRow, DocumentSession
 class SessionStore:
     def __init__(self) -> None:
         self._sessions: dict[str, DocumentSession] = {}
+        self._compare_cache: dict[str, list[CompareRow]] = {}
         self._lock = Lock()
 
     def create(self, *, source_file_name: str, document_text: str) -> DocumentSession:
@@ -64,3 +65,14 @@ class SessionStore:
             )
             self._sessions[doc_id] = updated
             return updated
+
+    def get_compare_cache(self, cache_key: str) -> list[CompareRow] | None:
+        with self._lock:
+            rows = self._compare_cache.get(cache_key)
+            if rows is None:
+                return None
+            return [row.model_copy(deep=True) for row in rows]
+
+    def save_compare_cache(self, cache_key: str, rows: list[CompareRow]) -> None:
+        with self._lock:
+            self._compare_cache[cache_key] = [row.model_copy(deep=True) for row in rows]
