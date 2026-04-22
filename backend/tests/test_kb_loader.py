@@ -23,7 +23,7 @@ def test_load_knowledge_base_flattens_categories() -> None:
     assert isinstance(kb, KnowledgeBase)
     assert kb.categories
     assert kb.entries
-    assert all(entry.type_code for entry in kb.entries)
+    assert all(entry.type_code in {"P", "A", "B", "C", "OTHER"} for entry in kb.entries)
     assert all(entry.category for entry in kb.entries)
 
 
