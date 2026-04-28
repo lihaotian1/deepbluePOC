@@ -9,37 +9,73 @@ from app.services.knowledge_base_manager import KnowledgeBaseManager
 
 
 class FakeDocumentCompareLLM:
-    async def compare_document_rows(self, *, document_title, document_text, entries):
+    async def extract_document_candidates(self, *, document_title, document_text):
+        assert document_title == "demo.md"
+        assert "这是正文。" in document_text
+        return [
+            {"chapter_title": "1 总则", "source_excerpt": "这是正文"},
+            {"chapter_title": "2 铭牌", "source_excerpt": "另一个正文"},
+            {"chapter_title": "3 参数", "source_excerpt": "120 m3/h"},
+        ]
+
+    async def compare_document_rows(self, *, document_title, document_text, entries, candidate_excerpts=None):
         assert document_title == "demo.md"
         assert "这是正文。" in document_text
         assert len(entries) == 2
+        assert candidate_excerpts is not None
         return [
             {
                 "entry_id": entries[0].entry_id,
                 "chapter_title": "1 总则",
-                "source_excerpt": "这是正文。",
+                "source_excerpt": "这是正文。需满足该要求。",
                 "difference_summary": "存在冲突：存在语言范围差异，需要与甲方澄清。",
                 "difference_summary_brief": "语言范围存在冲突。",
             },
             {
                 "entry_id": entries[0].entry_id,
                 "chapter_title": "2 铭牌",
-                "source_excerpt": "另一个正文。",
+                "source_excerpt": "另一个正文。需要按该项执行。",
                 "difference_summary": "存在冲突：甲方要求与我方标准明确不一致，需要与甲方澄清。",
                 "difference_summary_brief": "要求与标准不一致。",
             },
             {
                 "entry_id": entries[0].entry_id,
                 "chapter_title": "1 总则",
-                "source_excerpt": "这是正文。",
+                "source_excerpt": "这是正文。需满足该要求。",
                 "difference_summary": "存在冲突：重复结果不应再次输出。",
                 "difference_summary_brief": "重复结果。",
             },
         ]
 
+    async def extract_other_requirements(self, *, document_title, candidate_excerpts, matched_excerpts):
+        assert document_title == "demo.md"
+        assert len(candidate_excerpts) == 1
+        assert candidate_excerpts[0]["source_excerpt"] == "120 m3/h"
+        assert len(matched_excerpts) == 2
+        return [
+            {
+                "chapter_title": "3 参数",
+                "source_excerpt": "Pump flow shall be 120 m3/h. at rated condition.",
+                "summary": "询价文件要求泵流量达到 120 m3/h。",
+            }
+        ]
+
 
 class MixedOutcomeAndDuplicateLLM:
-    async def compare_document_rows(self, *, document_title, document_text, entries):
+    async def extract_document_candidates(self, *, document_title, document_text):
+        return [
+            {"chapter_title": "1 交付文件", "source_excerpt": "Vendor shall provide 3D model in STEP format."},
+            {
+                "chapter_title": "1 交付文件",
+                "source_excerpt": "Vendor shall provide 3D model in STEP format and native CAD format.",
+            },
+            {
+                "chapter_title": "2 铭牌",
+                "source_excerpt": "Nameplate shall be provided in Chinese and English.",
+            },
+        ]
+
+    async def compare_document_rows(self, *, document_title, document_text, entries, candidate_excerpts=None):
         return [
             {
                 "entry_id": entries[0].entry_id,
@@ -78,18 +114,33 @@ class MixedOutcomeAndDuplicateLLM:
             },
         ]
 
+    async def extract_other_requirements(self, *, document_title, candidate_excerpts, matched_excerpts):
+        return []
+
 
 class BlankMessageFailureLLM:
-    async def compare_document_rows(self, *, document_title, document_text, entries):
+    async def extract_document_candidates(self, *, document_title, document_text):
+        return [{"chapter_title": "1 总则", "source_excerpt": "这是正文。"}]
+
+    async def compare_document_rows(self, *, document_title, document_text, entries, candidate_excerpts=None):
         raise RuntimeError()
 
 
 class CacheAwareLLM:
     def __init__(self) -> None:
-        self.calls = 0
+        self.compare_calls = 0
+        self.other_calls = 0
+        self.candidate_calls = 0
 
-    async def stream_compare_document_rows(self, *, document_title, document_text, entries):
-        self.calls += 1
+    async def extract_document_candidates(self, *, document_title, document_text):
+        self.candidate_calls += 1
+        return [
+            {"chapter_title": "1 总则", "source_excerpt": "source"},
+            {"chapter_title": "2 参数", "source_excerpt": "Pump flow shall be 120 m3/h."},
+        ]
+
+    async def stream_compare_document_rows(self, *, document_title, document_text, entries, candidate_excerpts=None):
+        self.compare_calls += 1
         yield {
             "entry_id": entries[0].entry_id,
             "chapter_title": "1 总则",
@@ -98,9 +149,36 @@ class CacheAwareLLM:
             "difference_summary_brief": "需要澄清。",
         }
 
+    async def extract_other_requirements(self, *, document_title, candidate_excerpts, matched_excerpts):
+        self.other_calls += 1
+        return [
+            {
+                "chapter_title": "2 参数",
+                "source_excerpt": "Pump flow shall be 120 m3/h.",
+                "summary": "询价文件要求泵流量达到 120 m3/h。",
+            }
+        ]
+
 
 class StreamingRowsLLM:
-    async def stream_compare_document_rows(self, *, document_title, document_text, entries):
+    async def extract_document_candidates(self, *, document_title, document_text):
+        return [
+            {"chapter_title": "1 交付文件", "source_excerpt": "Vendor shall provide 3D model in STEP format."},
+            {
+                "chapter_title": "1 交付文件",
+                "source_excerpt": "Vendor shall provide 3D model in STEP format and native CAD format.",
+            },
+            {
+                "chapter_title": "2 铭牌",
+                "source_excerpt": "Nameplate shall be provided in Chinese and English.",
+            },
+            {
+                "chapter_title": "3 参数",
+                "source_excerpt": "Pump flow shall be 120 m3/h.",
+            },
+        ]
+
+    async def stream_compare_document_rows(self, *, document_title, document_text, entries, candidate_excerpts=None):
         yield {
             "entry_id": entries[0].entry_id,
             "chapter_title": "1 交付文件",
@@ -123,6 +201,44 @@ class StreamingRowsLLM:
             "difference_summary_brief": "铭牌语言要求可满足。",
         }
 
+    async def extract_other_requirements(self, *, document_title, candidate_excerpts, matched_excerpts):
+        assert len(candidate_excerpts) == 1
+        return [
+            {
+                "chapter_title": "3 参数",
+                "source_excerpt": "Pump flow shall be 120 m3/h.",
+                "summary": "询价文件要求泵流量达到 120 m3/h。",
+            }
+        ]
+
+
+class DuplicateKbTextLLM:
+    async def extract_document_candidates(self, *, document_title, document_text):
+        return [
+            {"chapter_title": "1 文件", "source_excerpt": "双语铭牌"},
+        ]
+
+    async def compare_document_rows(self, *, document_title, document_text, entries, candidate_excerpts=None):
+        return [
+            {
+                "entry_id": entries[0].entry_id,
+                "chapter_title": "1 文件",
+                "source_excerpt": "询价文件要求提供双语铭牌。",
+                "difference_summary": "直接满足：我方可提供双语铭牌。",
+                "difference_summary_brief": "可提供双语铭牌。",
+            },
+            {
+                "entry_id": entries[1].entry_id,
+                "chapter_title": "1 文件",
+                "source_excerpt": "询价文件要求提供双语铭牌。",
+                "difference_summary": "直接满足：我方可提供双语铭牌。",
+                "difference_summary_brief": "可提供双语铭牌。",
+            },
+        ]
+
+    async def extract_other_requirements(self, *, document_title, candidate_excerpts, matched_excerpts):
+        return []
+
 
 def _write_compare_files(kb_dir: Path) -> None:
     kb_dir.mkdir(parents=True, exist_ok=True)
@@ -132,6 +248,22 @@ def _write_compare_files(kb_dir: Path) -> None:
                 "标准分类": [
                     {"标准条目一": "P"},
                     {"标准条目二": "A"},
+                ]
+            },
+            ensure_ascii=False,
+        ),
+        encoding="utf-8",
+    )
+
+
+def _write_duplicate_text_compare_files(kb_dir: Path) -> None:
+    kb_dir.mkdir(parents=True, exist_ok=True)
+    (kb_dir / STANDARD_KB_FILE_NAME).write_text(
+        json.dumps(
+            {
+                "标准分类": [
+                    {"提供双语铭牌": "P"},
+                    {"提供双语铭牌": "A"},
                 ]
             },
             ensure_ascii=False,
@@ -164,16 +296,22 @@ def test_compare_stream_returns_row_events_for_full_document_results(tmp_path: P
         body = "".join(response.iter_text())
 
     assert body.count("event: compare_row\n") == 2
+    assert body.count("event: other_requirement_row\n") == 1
     assert '"chapter_title":"1 总则"' in body
     assert '"chapter_title":"2 铭牌"' in body
-    assert '"source_excerpt":"这是正文。"' in body
-    assert '"source_excerpt":"另一个正文。"' in body
+    assert '"source_excerpt":"这是正文"' in body
+    assert '"source_excerpt":"另一个正文"' in body
+    assert '"source_excerpt":"120 m3/h"' in body
+    assert '"source_excerpt":"这是正文。需满足该要求。"' not in body
+    assert '"source_excerpt":"Pump flow shall be 120 m3/h. at rated condition."' not in body
     assert '"kb_entry_text":"标准条目一"' in body
     assert '"type_code":"P"' in body
     assert '"difference_summary_brief":"语言范围存在冲突。"' in body
+    assert '"summary":"询价文件要求泵流量达到 120 m3/h。"' in body
     assert '"type_code":"A"' not in body
     assert '"OTHER"' not in body
     assert '"row_count":2' in body
+    assert 'event: other_requirement_done' in body
     assert "event: compare_done" in body
 
 
@@ -233,6 +371,7 @@ def test_compare_stream_keeps_only_conflict_rows_for_same_entry_and_dedupes_dupl
     assert '"difference_summary_brief":"可提供 STEP 格式 3D 模型。"' not in body
     assert body.count('"difference_summary_brief":"还要求原生 CAD 格式，需澄清。"') == 1
     assert '"difference_summary_brief":"铭牌语言要求可满足。"' in body
+    assert "event: other_requirement_row" not in body
 
 
 def test_compare_stream_emits_incremental_add_and_remove_events_when_streaming_rows(tmp_path: Path) -> None:
@@ -260,8 +399,10 @@ def test_compare_stream_emits_incremental_add_and_remove_events_when_streaming_r
 
     assert body.count("event: compare_row\n") == 3
     assert body.count("event: compare_row_remove\n") == 1
+    assert body.count("event: other_requirement_row\n") == 1
     assert '"difference_summary_brief":"铭牌语言要求可满足。"' in body
     assert '"difference_summary_brief":"还要求原生 CAD 格式，需澄清。"' in body
+    assert '"summary":"询价文件要求泵流量达到 120 m3/h。"' in body
 
 
 def test_compare_stream_reuses_cached_rows_without_reinvoking_llm(tmp_path: Path) -> None:
@@ -289,4 +430,34 @@ def test_compare_stream_reuses_cached_rows_without_reinvoking_llm(tmp_path: Path
             assert response.status_code == 200
             _ = "".join(response.iter_text())
 
-    assert llm.calls == 1
+    assert llm.candidate_calls == 1
+    assert llm.compare_calls == 1
+    assert llm.other_calls == 1
+
+
+def test_compare_stream_dedupes_rows_with_same_kb_entry_text_even_when_entry_ids_differ(tmp_path: Path) -> None:
+    kb_dir = tmp_path / "知识库"
+    _write_duplicate_text_compare_files(kb_dir)
+
+    app = create_app()
+    app.state.knowledge_base_manager = KnowledgeBaseManager(kb_dir)
+    app.state.matcher_llm = DuplicateKbTextLLM()
+    client = TestClient(app)
+
+    content = "1 文件\n需要双语铭牌。\n"
+    upload_resp = client.post(
+        "/api/v1/documents/upload",
+        files={"file": ("demo.md", content.encode("utf-8"), "text/markdown")},
+    )
+    doc_id = upload_resp.json()["doc_id"]
+
+    with client.stream(
+        "POST",
+        f"/api/v1/documents/{doc_id}/compare/stream",
+    ) as response:
+        assert response.status_code == 200
+        body = "".join(response.iter_text())
+
+    assert body.count("event: compare_row\n") == 1
+    assert body.count('"kb_entry_text":"提供双语铭牌"') == 1
+    assert '"difference_summary_brief":"可提供双语铭牌。"' in body

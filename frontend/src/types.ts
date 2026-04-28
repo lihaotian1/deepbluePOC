@@ -54,6 +54,14 @@ export interface CompareRow {
   review_status?: ReviewStatus;
 }
 
+export interface OtherRequirementRow {
+  row_id: string;
+  chapter_title: string;
+  source_excerpt: string;
+  summary: string;
+  source_order: number;
+}
+
 export interface KnowledgeBaseFileSummary {
   file_name: string;
   display_name: string;

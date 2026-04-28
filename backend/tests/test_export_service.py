@@ -2,7 +2,7 @@ from io import BytesIO
 
 from openpyxl import load_workbook
 
-from app.schemas import CompareRow
+from app.schemas import CompareRow, OtherRequirementRow
 from app.services.export_service import build_export_workbook
 
 
@@ -25,6 +25,11 @@ def _load_first_sheet_rows(blob: bytes) -> list[tuple[object, ...]]:
     return list(sheet.iter_rows(values_only=True))
 
 
+def _load_sheet_rows(blob: bytes, title: str) -> list[tuple[object, ...]]:
+    workbook = load_workbook(BytesIO(blob))
+    return list(workbook[title].iter_rows(values_only=True))
+
+
 def test_export_workbook_writes_expected_headers_and_compare_rows() -> None:
     rows = [
         CompareRow(
@@ -41,7 +46,23 @@ def test_export_workbook_writes_expected_headers_and_compare_rows() -> None:
         )
     ]
 
-    exported_rows = _load_first_sheet_rows(build_export_workbook(rows=rows, title="标准化配套结果"))
+    other_requirements = [
+        OtherRequirementRow(
+            row_id="other-1",
+            chapter_title="7 PARAMETERS",
+            source_excerpt="Pump flow shall be 120 m3/h.",
+            summary="询价文件要求泵流量达到 120 m3/h。",
+            source_order=3,
+        )
+    ]
+
+    workbook_bytes = build_export_workbook(
+        rows=rows,
+        other_requirements=other_requirements,
+        title="标准化配套结果",
+    )
+    exported_rows = _load_first_sheet_rows(workbook_bytes)
+    other_rows = _load_sheet_rows(workbook_bytes, "其他要求")
 
     assert exported_rows[0] == EXPECTED_HEADERS
     assert exported_rows[1] == (
@@ -56,12 +77,18 @@ def test_export_workbook_writes_expected_headers_and_compare_rows() -> None:
         "已审",
     )
     assert len(exported_rows) == 2
+    assert other_rows[0] == ("序号", "询价文件最小原文", "AI一句话总结")
+    assert other_rows[1] == (1, "Pump flow shall be 120 m3/h.", "询价文件要求泵流量达到 120 m3/h。")
 
 
 def test_export_workbook_does_not_append_other_rows_for_unmatched_content() -> None:
     rows = []
 
-    exported_rows = _load_first_sheet_rows(build_export_workbook(rows=rows, title="标准化配套结果"))
+    workbook_bytes = build_export_workbook(rows=rows, other_requirements=[], title="标准化配套结果")
+    exported_rows = _load_first_sheet_rows(workbook_bytes)
+    other_rows = _load_sheet_rows(workbook_bytes, "其他要求")
 
     assert exported_rows[0] == EXPECTED_HEADERS
     assert len(exported_rows) == 1
+    assert other_rows[0] == ("序号", "询价文件最小原文", "AI一句话总结")
+    assert len(other_rows) == 1

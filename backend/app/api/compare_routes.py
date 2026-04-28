@@ -9,7 +9,7 @@ from fastapi.responses import StreamingResponse
 import httpx
 
 from app.api.deps import get_knowledge_base_manager, get_matcher_llm, get_session_store
-from app.schemas import CompareRow
+from app.schemas import CompareAnalysisResult, CompareRow, OtherRequirementRow
 from app.services.compare_profiles import STANDARD_KB_FILE_NAME, get_compare_profile
 from app.services.knowledge_base_manager import KnowledgeBaseManager
 from app.services.llm_client import OpenAICompatibleMatcherLLM
@@ -27,6 +27,11 @@ def _sse_event(event: str, data: dict) -> str:
 def _build_row_id(entry_id: str, source_excerpt: str) -> str:
     digest = hashlib.sha1(f"{entry_id}\n{source_excerpt}".encode("utf-8")).hexdigest()[:12]
     return f"{entry_id}::{digest}"
+
+
+def _build_other_requirement_row_id(chapter_title: str, source_excerpt: str) -> str:
+    digest = hashlib.sha1(f"{chapter_title}\n{source_excerpt}".encode("utf-8")).hexdigest()[:12]
+    return f"other::{digest}"
 
 
 def _build_compare_cache_key(*, document_text: str, kb_entries, model: str, base_url: str) -> str:
@@ -111,7 +116,8 @@ def _pick_preferred_row(current: CompareRow, candidate: CompareRow) -> CompareRo
 def _coalesce_compare_rows(rows: list[CompareRow]) -> list[CompareRow]:
     grouped: dict[str, list[CompareRow]] = {}
     for row in rows:
-        grouped.setdefault(row.kb_entry_id, []).append(row)
+        group_key = _normalize_excerpt_for_compare(row.kb_entry_text) or row.kb_entry_id
+        grouped.setdefault(group_key, []).append(row)
 
     merged_rows: list[CompareRow] = []
     for entry_rows in grouped.values():
@@ -141,6 +147,118 @@ def _coalesce_compare_rows(rows: list[CompareRow]) -> list[CompareRow]:
         merged_rows.extend(entry_merged)
 
     return merged_rows
+
+
+def _with_source_order(candidate_excerpts: list[dict[str, str]]) -> list[dict[str, object]]:
+    ordered: list[dict[str, object]] = []
+    for index, item in enumerate(candidate_excerpts, start=1):
+        source_excerpt = str(item.get("source_excerpt", "")).strip()
+        if not source_excerpt:
+            continue
+        ordered.append(
+            {
+                "chapter_title": str(item.get("chapter_title", "")).strip() or "未识别标题",
+                "source_excerpt": source_excerpt,
+                "source_order": index,
+            }
+        )
+    return ordered
+
+
+def _filter_unmatched_candidates(
+    candidate_excerpts: list[dict[str, object]],
+    matched_rows: list[CompareRow],
+) -> list[dict[str, object]]:
+    unmatched: list[dict[str, object]] = []
+    matched_excerpts = [_normalize_excerpt_for_compare(row.source_excerpt) for row in matched_rows]
+    for candidate in candidate_excerpts:
+        source_excerpt = str(candidate.get("source_excerpt", "")).strip()
+        if not source_excerpt:
+            continue
+        normalized_source = _normalize_excerpt_for_compare(source_excerpt)
+        is_matched = any(_looks_like_same_requirement(normalized_source, matched_excerpt) for matched_excerpt in matched_excerpts)
+        if is_matched:
+            continue
+        unmatched.append(candidate)
+    return unmatched
+
+
+def _match_candidate_for_other_requirement(
+    source_excerpt: str,
+    candidate_excerpts: list[dict[str, object]],
+) -> dict[str, object] | None:
+    normalized_source = _normalize_excerpt_for_compare(source_excerpt)
+    source_tokens = {token for token in re.split(r"[^a-z0-9\u4e00-\u9fff]+", normalized_source) if token}
+    best_candidate: dict[str, object] | None = None
+    best_score: tuple[float, int] | None = None
+
+    for candidate in candidate_excerpts:
+        candidate_excerpt = str(candidate.get("source_excerpt", "")).strip()
+        if not candidate_excerpt:
+            continue
+        normalized_candidate = _normalize_excerpt_for_compare(candidate_excerpt)
+        if not _looks_like_same_requirement(normalized_source, normalized_candidate):
+            continue
+
+        if normalized_source == normalized_candidate:
+            score = (3.0, len(candidate_excerpt))
+        elif normalized_candidate in normalized_source or normalized_source in normalized_candidate:
+            score = (2.0, len(candidate_excerpt))
+        else:
+            candidate_tokens = {token for token in re.split(r"[^a-z0-9\u4e00-\u9fff]+", normalized_candidate) if token}
+            smaller = min(len(source_tokens), len(candidate_tokens))
+            overlap = len(source_tokens & candidate_tokens)
+            ratio = overlap / smaller if smaller else 0.0
+            score = (1.0 + ratio, len(candidate_excerpt))
+
+        if best_score is None or score > best_score:
+            best_candidate = candidate
+            best_score = score
+
+    return best_candidate
+
+
+def _resolve_minimal_candidate_excerpt(
+    source_excerpt: str,
+    candidate_excerpts: list[dict[str, object]],
+) -> str:
+    candidate = _match_candidate_for_other_requirement(source_excerpt, candidate_excerpts)
+    if candidate is None:
+        return source_excerpt
+
+    normalized_excerpt = str(candidate.get("source_excerpt", "")).strip()
+    return normalized_excerpt or source_excerpt
+
+
+def _build_other_requirement_rows(
+    raw_rows: list[dict[str, str]],
+    candidate_excerpts: list[dict[str, object]],
+) -> list[OtherRequirementRow]:
+    output: list[OtherRequirementRow] = []
+    seen_row_ids: set[str] = set()
+    for row in raw_rows:
+        source_excerpt = row.get("source_excerpt", "")
+        candidate = _match_candidate_for_other_requirement(source_excerpt, candidate_excerpts)
+        if candidate is None:
+            continue
+
+        chapter_title = str(candidate.get("chapter_title", "")).strip() or "未识别标题"
+        normalized_excerpt = str(candidate.get("source_excerpt", "")).strip()
+        row_id = _build_other_requirement_row_id(chapter_title, normalized_excerpt)
+        if row_id in seen_row_ids:
+            continue
+        seen_row_ids.add(row_id)
+        output.append(
+            OtherRequirementRow(
+                row_id=row_id,
+                chapter_title=chapter_title,
+                source_excerpt=normalized_excerpt,
+                summary=row.get("summary", "").strip(),
+                source_order=int(candidate.get("source_order", 0) or 0),
+            )
+        )
+
+    return sorted(output, key=lambda item: item.source_order)
 
 
 @router.post("/{doc_id}/compare/stream")
@@ -176,11 +294,16 @@ async def compare_stream(
                 "source_file_name": session.source_file_name,
             },
         )
+        store.save_compare_analysis(doc_id, compare_rows=[], other_requirements=[])
 
-        cached_rows = store.get_compare_cache(cache_key)
-        if cached_rows is not None:
-            store.save_compare_rows(doc_id, cached_rows)
-            for row in cached_rows:
+        cached_analysis = store.get_compare_cache(cache_key)
+        if cached_analysis is not None:
+            store.save_compare_analysis(
+                doc_id,
+                compare_rows=cached_analysis.compare_rows,
+                other_requirements=cached_analysis.other_requirements,
+            )
+            for row in cached_analysis.compare_rows:
                 yield _sse_event(
                     "compare_row",
                     {
@@ -188,11 +311,64 @@ async def compare_stream(
                         "result": row.model_dump(),
                     },
                 )
+            for row in cached_analysis.other_requirements:
+                yield _sse_event(
+                    "other_requirement_row",
+                    {
+                        "doc_id": doc_id,
+                        "result": row.model_dump(),
+                    },
+                )
+            yield _sse_event(
+                "other_requirement_done",
+                {
+                    "doc_id": doc_id,
+                    "row_count": len(cached_analysis.other_requirements),
+                },
+            )
             yield _sse_event(
                 "compare_done",
                 {
                     "doc_id": doc_id,
-                    "row_count": len(cached_rows),
+                    "row_count": len(cached_analysis.compare_rows),
+                    "other_requirement_count": len(cached_analysis.other_requirements),
+                },
+            )
+            return
+
+        try:
+            candidate_excerpts = _with_source_order(
+                await llm.extract_document_candidates(
+                    document_title=session.source_file_name,
+                    document_text=session.document_text,
+                )
+            )
+        except Exception as exc:
+            yield _sse_event(
+                "error",
+                {
+                    "doc_id": doc_id,
+                    "message": _format_compare_error_message(exc),
+                },
+            )
+            return
+
+        if not candidate_excerpts:
+            empty_analysis = CompareAnalysisResult(compare_rows=[], other_requirements=[])
+            store.save_compare_cache(cache_key, empty_analysis)
+            yield _sse_event(
+                "other_requirement_done",
+                {
+                    "doc_id": doc_id,
+                    "row_count": 0,
+                },
+            )
+            yield _sse_event(
+                "compare_done",
+                {
+                    "doc_id": doc_id,
+                    "row_count": 0,
+                    "other_requirement_count": 0,
                 },
             )
             return
@@ -200,7 +376,7 @@ async def compare_stream(
         entry_map = {entry.entry_id: entry for entry in kb.entries}
         def build_compare_row(row: dict[str, str]) -> CompareRow | None:
             entry_id = row["entry_id"]
-            source_excerpt = row["source_excerpt"]
+            source_excerpt = _resolve_minimal_candidate_excerpt(row["source_excerpt"], candidate_excerpts)
             entry = entry_map.get(entry_id)
             if entry is None:
                 return None
@@ -225,6 +401,13 @@ async def compare_stream(
                     document_title=session.source_file_name,
                     document_text=session.document_text,
                     entries=kb.entries,
+                    candidate_excerpts=[
+                        {
+                            "chapter_title": str(item["chapter_title"]),
+                            "source_excerpt": str(item["source_excerpt"]),
+                        }
+                        for item in candidate_excerpts
+                    ],
                 ):
                     entry_id = row["entry_id"]
                     source_excerpt = row["source_excerpt"]
@@ -276,14 +459,56 @@ async def compare_stream(
                 )
                 return
 
+            matched_excerpts = [
+                {"chapter_title": row.chapter_title, "source_excerpt": row.source_excerpt}
+                for row in current_rows
+            ]
+            unmatched_candidates = _filter_unmatched_candidates(candidate_excerpts, current_rows)
+            try:
+                raw_other_rows = await llm.extract_other_requirements(
+                    document_title=session.source_file_name,
+                    candidate_excerpts=unmatched_candidates,
+                    matched_excerpts=matched_excerpts,
+                )
+            except Exception as exc:
+                yield _sse_event(
+                    "error",
+                    {
+                        "doc_id": doc_id,
+                        "message": _format_compare_error_message(exc),
+                    },
+                )
+                return
+
+            other_rows = _build_other_requirement_rows(raw_other_rows, unmatched_candidates)
+            store.save_compare_analysis(doc_id, compare_rows=current_rows, other_requirements=other_rows)
+            for row in other_rows:
+                yield _sse_event(
+                    "other_requirement_row",
+                    {
+                        "doc_id": doc_id,
+                        "result": row.model_dump(),
+                    },
+                )
+            yield _sse_event(
+                "other_requirement_done",
+                {
+                    "doc_id": doc_id,
+                    "row_count": len(other_rows),
+                },
+            )
             yield _sse_event(
                 "compare_done",
                 {
                     "doc_id": doc_id,
                     "row_count": len(current_rows),
+                    "other_requirement_count": len(other_rows),
                 },
             )
-            store.save_compare_cache(cache_key, current_rows)
+            store.save_compare_cache(
+                cache_key,
+                CompareAnalysisResult(compare_rows=current_rows, other_requirements=other_rows),
+            )
             return
 
         try:
@@ -291,6 +516,13 @@ async def compare_stream(
                 document_title=session.source_file_name,
                 document_text=session.document_text,
                 entries=kb.entries,
+                candidate_excerpts=[
+                    {
+                        "chapter_title": str(item["chapter_title"]),
+                        "source_excerpt": str(item["source_excerpt"]),
+                    }
+                    for item in candidate_excerpts
+                ],
             )
         except Exception as exc:
             yield _sse_event(
@@ -319,8 +551,33 @@ async def compare_stream(
                 compare_rows.append(next_row)
 
         compare_rows = _coalesce_compare_rows(compare_rows)
-        store.save_compare_rows(doc_id, compare_rows)
-        store.save_compare_cache(cache_key, compare_rows)
+        matched_excerpts = [
+            {"chapter_title": row.chapter_title, "source_excerpt": row.source_excerpt}
+            for row in compare_rows
+        ]
+        unmatched_candidates = _filter_unmatched_candidates(candidate_excerpts, compare_rows)
+        try:
+            raw_other_rows = await llm.extract_other_requirements(
+                document_title=session.source_file_name,
+                candidate_excerpts=unmatched_candidates,
+                matched_excerpts=matched_excerpts,
+            )
+        except Exception as exc:
+            yield _sse_event(
+                "error",
+                {
+                    "doc_id": doc_id,
+                    "message": _format_compare_error_message(exc),
+                },
+            )
+            return
+
+        other_rows = _build_other_requirement_rows(raw_other_rows, unmatched_candidates)
+        store.save_compare_analysis(doc_id, compare_rows=compare_rows, other_requirements=other_rows)
+        store.save_compare_cache(
+            cache_key,
+            CompareAnalysisResult(compare_rows=compare_rows, other_requirements=other_rows),
+        )
 
         for row in compare_rows:
             yield _sse_event(
@@ -330,12 +587,28 @@ async def compare_stream(
                     "result": row.model_dump(),
                 },
             )
+        for row in other_rows:
+            yield _sse_event(
+                "other_requirement_row",
+                {
+                    "doc_id": doc_id,
+                    "result": row.model_dump(),
+                },
+            )
+        yield _sse_event(
+            "other_requirement_done",
+            {
+                "doc_id": doc_id,
+                "row_count": len(other_rows),
+            },
+        )
 
         yield _sse_event(
             "compare_done",
             {
                 "doc_id": doc_id,
                 "row_count": len(compare_rows),
+                "other_requirement_count": len(other_rows),
             },
         )
 

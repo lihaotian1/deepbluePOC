@@ -10,13 +10,19 @@ import { streamCompare } from "../api/sse";
 import UploadPanel from "../components/UploadPanel";
 import { buildTypeFilterModel, filterCompareRowsByType, mergeCompareRow } from "./homePageCompareState";
 import { buildCompareDoneMessage, resolveHomePageStatusDotClass, type HomePageStatusTone } from "./homePageStatus";
+import OtherRequirementsModal from "../components/OtherRequirementsModal";
 import {
   markCompareRowReviewed,
   normalizeCompareRow,
   removeCompareRow,
   updateCompareRowReviewComment,
 } from "./homePageReviewState";
-import type { CompareRow, ResultFilterType } from "../types";
+import {
+  buildOtherRequirementsPageModel,
+  canOpenOtherRequirements,
+  mergeOtherRequirementRow,
+} from "./otherRequirementsState";
+import type { CompareRow, OtherRequirementRow, ResultFilterType } from "../types";
 
 
 const PAGE_SIZE = 10;
@@ -40,6 +46,9 @@ function HomePage() {
   const [translatedText, setTranslatedText] = useState("");
   const [translationError, setTranslationError] = useState("");
   const [translating, setTranslating] = useState(false);
+  const [otherRequirements, setOtherRequirements] = useState<OtherRequirementRow[]>([]);
+  const [otherRequirementsOpen, setOtherRequirementsOpen] = useState(false);
+  const [otherRequirementsPage, setOtherRequirementsPage] = useState(1);
 
   const filterModel = useMemo(() => buildTypeFilterModel(compareRows), [compareRows]);
   const filteredRows = useMemo(
@@ -52,6 +61,11 @@ function HomePage() {
   const activeRow = compareRows.find((row) => row.row_id === activeRowId) ?? null;
   const reviewedCount = compareRows.filter((row) => normalizeCompareRow(row).review_status === "已审").length;
   const displayExcerpt = activeRow && translatedRowId === activeRow.row_id && translatedText ? translatedText : activeRow?.source_excerpt ?? "";
+  const otherRequirementsPageModel = useMemo(
+    () => buildOtherRequirementsPageModel(otherRequirements, otherRequirementsPage),
+    [otherRequirements, otherRequirementsPage],
+  );
+  const canOpenOtherRequirementsModal = canOpenOtherRequirements(otherRequirements, comparing);
 
   useEffect(() => {
     if (page !== safePage) {
@@ -69,6 +83,12 @@ function HomePage() {
     setTranslatedRowId("");
     setTranslating(false);
   }, [activeRow, translatedRowId]);
+
+  useEffect(() => {
+    if (otherRequirementsPage !== otherRequirementsPageModel.page) {
+      setOtherRequirementsPage(otherRequirementsPageModel.page);
+    }
+  }, [otherRequirementsPage, otherRequirementsPageModel.page]);
 
   async function handleUpload() {
     if (!selectedFile) {
@@ -89,6 +109,9 @@ function HomePage() {
       setActiveRowId("");
       setPage(1);
       setPreviewExpanded(false);
+      setOtherRequirements([]);
+      setOtherRequirementsOpen(false);
+      setOtherRequirementsPage(1);
       setProgressText("已准备就绪");
       setStatusTone("idle");
     } catch (error) {
@@ -111,6 +134,9 @@ function HomePage() {
     setActiveFilter("ALL");
     setActiveRowId("");
     setPage(1);
+    setOtherRequirements([]);
+    setOtherRequirementsOpen(false);
+    setOtherRequirementsPage(1);
     setProgressText("正在解析...");
     setStatusTone("running");
 
@@ -135,6 +161,16 @@ function HomePage() {
             setCompareRows((prev) => mergeCompareRow(prev, normalizedRow));
             setProgressText("正在解析...");
             setStatusTone("running");
+            return;
+          }
+
+          if (eventName === "other_requirement_row") {
+            const result = eventPayload.result as OtherRequirementRow | undefined;
+            if (!result || typeof result.row_id !== "string") {
+              return;
+            }
+
+            setOtherRequirements((prev) => mergeOtherRequirementRow(prev, result));
             return;
           }
 
@@ -296,6 +332,13 @@ function HomePage() {
           </button>
           <button className="btn btn-lite compare-panel__action-btn" onClick={handleExport} disabled={!docId || comparing}>
             导出 Excel
+          </button>
+          <button
+            className="btn btn-lite compare-panel__action-btn"
+            onClick={() => setOtherRequirementsOpen(true)}
+            disabled={!canOpenOtherRequirementsModal}
+          >
+            其他要求
           </button>
           <button className="btn btn-review compare-panel__action-btn" onClick={handleSubmitReview} disabled={!docId || comparing}>
             提交审核
@@ -471,6 +514,14 @@ function HomePage() {
           </aside>
         </>
       ) : null}
+
+      <OtherRequirementsModal
+        isOpen={otherRequirementsOpen}
+        rows={otherRequirements}
+        page={otherRequirementsPage}
+        onClose={() => setOtherRequirementsOpen(false)}
+        onPageChange={setOtherRequirementsPage}
+      />
     </section>
   );
 }

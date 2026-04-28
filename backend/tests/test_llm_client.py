@@ -303,3 +303,36 @@ def test_stream_compare_document_rows_yields_rows_incrementally_from_json_lines(
             "difference_summary_brief": "可满足",
         },
     ]
+
+
+def test_extract_other_requirements_yields_summary_rows_from_json_lines(monkeypatch) -> None:
+    _SequencedAsyncClient.responses = []
+    _SequencedAsyncClient.stream_chunks = [
+        'data: {"choices":[{"delta":{"content":"{\\"chapter_title\\":\\"3 参数\\",\\"source_excerpt\\":\\"Pump flow shall be 120 m3/h.\\",\\"summary\\":\\"询价文件要求泵流量达到 120 m3/h。\\"}\\n"}}]}\n\n',
+        'data: {"choices":[{"delta":{"content":"{\\"chapter_title\\":\\"3 参数\\",\\"source_excerpt\\":\\"Pump flow shall be 120 m3/h.\\",\\"summary\\":\\"重复结果不应保留\\"}\\n"}}]}\n\n',
+        "data: [DONE]\n\n",
+    ]
+    monkeypatch.setattr(llm_client_module.httpx, "AsyncClient", _SequencedAsyncClient)
+
+    client = OpenAICompatibleMatcherLLM(
+        base_url="https://example.test/v1",
+        api_key="demo-key",
+        model="demo-model",
+        timeout=60,
+    )
+
+    rows = asyncio.run(
+        client.extract_other_requirements(
+            document_title="demo.pdf",
+            candidate_excerpts=[{"chapter_title": "3 参数", "source_excerpt": "Pump flow shall be 120 m3/h."}],
+            matched_excerpts=[{"chapter_title": "1 总则", "source_excerpt": "Vendor shall provide drawings."}],
+        )
+    )
+
+    assert rows == [
+        {
+            "chapter_title": "3 参数",
+            "source_excerpt": "Pump flow shall be 120 m3/h.",
+            "summary": "询价文件要求泵流量达到 120 m3/h。",
+        }
+    ]

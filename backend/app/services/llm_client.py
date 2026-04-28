@@ -14,6 +14,7 @@ from app.services.prompt_builder import (
     build_candidate_adjudication_messages,
     build_document_candidate_messages,
     build_document_compare_messages,
+    build_other_requirement_messages,
     build_batch_item_messages,
     build_category_messages,
     build_item_messages,
@@ -188,6 +189,7 @@ class OpenAICompatibleMatcherLLM:
         document_title: str,
         document_text: str,
         entries: list[KnowledgeEntry],
+        candidate_excerpts: list[dict[str, str]] | None = None,
     ) -> list[dict[str, str]]:
         if not self.api_key:
             return []
@@ -197,6 +199,7 @@ class OpenAICompatibleMatcherLLM:
             document_title=document_title,
             document_text=document_text,
             entries=entries,
+            candidate_excerpts=candidate_excerpts,
         ):
             output.append(row)
         return output
@@ -207,14 +210,16 @@ class OpenAICompatibleMatcherLLM:
         document_title: str,
         document_text: str,
         entries: list[KnowledgeEntry],
+        candidate_excerpts: list[dict[str, str]] | None = None,
     ):
         if not self.api_key:
             return
 
-        candidate_excerpts = await self.extract_document_candidates(
-            document_title=document_title,
-            document_text=document_text,
-        )
+        if candidate_excerpts is None:
+            candidate_excerpts = await self.extract_document_candidates(
+                document_title=document_title,
+                document_text=document_text,
+            )
         if not candidate_excerpts:
             return
 
@@ -253,6 +258,30 @@ class OpenAICompatibleMatcherLLM:
             candidates.append(row)
 
         return _dedupe_candidate_excerpts(candidates)
+
+    async def extract_other_requirements(
+        self,
+        *,
+        document_title: str,
+        candidate_excerpts: Sequence[dict[str, object]],
+        matched_excerpts: Sequence[dict[str, object]],
+    ) -> list[dict[str, str]]:
+        if not self.api_key or not candidate_excerpts:
+            return []
+
+        messages = build_other_requirement_messages(
+            document_title=document_title,
+            candidate_excerpts=candidate_excerpts,
+            matched_excerpts=matched_excerpts,
+        )
+        rows: list[dict[str, str]] = []
+        async for row in self._stream_json_lines(
+            messages=messages,
+            timeout=max(self.timeout, FULL_DOCUMENT_MIN_TIMEOUT_SECONDS),
+            normalizer=_normalize_other_requirement_row,
+        ):
+            rows.append(row)
+        return _dedupe_other_requirement_rows(rows)
 
     async def translate_to_chinese(self, *, text: str) -> str:
         if not self.api_key:
@@ -588,6 +617,30 @@ def _normalize_candidate_excerpt_row(line: str) -> dict[str, str] | None:
     }
 
 
+def _normalize_other_requirement_row(line: str) -> dict[str, str] | None:
+    stripped = line.strip()
+    if not stripped or not stripped.startswith("{"):
+        return None
+    try:
+        row = json.loads(stripped)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(row, dict):
+        return None
+
+    chapter_title = str(row.get("chapter_title", "")).strip() or "未识别标题"
+    source_excerpt = str(row.get("source_excerpt", "")).strip()
+    summary = str(row.get("summary", "")).strip()
+    if not source_excerpt or not summary:
+        return None
+
+    return {
+        "chapter_title": chapter_title,
+        "source_excerpt": source_excerpt,
+        "summary": summary,
+    }
+
+
 def _dedupe_candidate_excerpts(rows: list[dict[str, str]]) -> list[dict[str, str]]:
     unique_rows: list[dict[str, str]] = []
     for row in rows:
@@ -606,6 +659,18 @@ def _dedupe_candidate_excerpts(rows: list[dict[str, str]]) -> list[dict[str, str
 
         if len(row["source_excerpt"]) > len(unique_rows[matched_index]["source_excerpt"]):
             unique_rows[matched_index] = row
+    return unique_rows
+
+
+def _dedupe_other_requirement_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    seen_excerpts: set[str] = set()
+    unique_rows: list[dict[str, str]] = []
+    for row in rows:
+        normalized_excerpt = _normalize_text_for_candidate_compare(row["source_excerpt"])
+        if normalized_excerpt in seen_excerpts:
+            continue
+        seen_excerpts.add(normalized_excerpt)
+        unique_rows.append(row)
     return unique_rows
 
 

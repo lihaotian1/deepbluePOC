@@ -6,7 +6,7 @@ from collections.abc import Sequence
 from app.services.kb_loader import KnowledgeEntry
 from app.services.sentence_splitter import split_sentences
 
-DOCUMENT_COMPARE_PIPELINE_VERSION = "compare-pipeline-v2"
+DOCUMENT_COMPARE_PIPELINE_VERSION = "compare-pipeline-v4"
 
 
 def build_document_candidate_messages(
@@ -17,8 +17,13 @@ def build_document_candidate_messages(
     system_prompt = (
         f"你是询价文件候选要求片段提取助手，当前流程版本为 {DOCUMENT_COMPARE_PIPELINE_VERSION}。"
         "你的任务是从整篇询价文件中，提取可能需要供应商响应、澄清、确认或偏差判断的候选要求片段。"
+        "只提取需要深蓝实际响应的技术要求。"
+        "排除招标流程、资质套话、泛化承诺、背景介绍、空洞规范引用。"
         "只保留与供货范围、文件资料、试验检验、标识语言、材料、结构、附件、包装、服务、质保等相关的要求。"
+        "source_excerpt 必须裁剪到最小可用原文，只保留能够独立表达该要求本身的最短关键短语或短句。"
+        "不要返回整段上下文或无关前后缀。"
         "如果两条原文本质上是同一件事的重复表达，只保留一条最完整、最有代表性的片段。"
+        "按文档原始顺序输出。"
         "输出要求："
         "1. 不要输出 markdown 代码块。"
         "2. 不要输出任何额外解释。"
@@ -30,6 +35,41 @@ def build_document_candidate_messages(
     user_payload = {
         "document_title": document_title,
         "document_text": document_text,
+    }
+    return [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": json.dumps(user_payload, ensure_ascii=False)},
+    ]
+
+
+def build_other_requirement_messages(
+    *,
+    document_title: str,
+    candidate_excerpts: Sequence[dict[str, object]],
+    matched_excerpts: Sequence[dict[str, object]],
+) -> list[dict[str, str]]:
+    system_prompt = (
+        f"你是询价文件未匹配技术要求清单整理助手，当前流程版本为 {DOCUMENT_COMPARE_PIPELINE_VERSION}。"
+        "candidate_excerpts 是候选技术要求片段列表。"
+        "matched_excerpts 是已经命中标准化配套条目的原文要求列表。"
+        "只允许从 candidate_excerpts 中挑选未被标准化配套覆盖的项。"
+        "不要输出 matched_excerpts 中已经命中的内容。"
+        "只保留需要深蓝实际响应的技术要求，不要输出招标相关空话、商务套话、背景说明或泛泛承诺。"
+        "source_excerpt 必须直接复用 candidate_excerpts 中的最小可用原文。"
+        "不要改写、扩写或拼接成长句。"
+        "summary 必须是中文一句话总结，形式接近“询价文件要求提供XXX”。"
+        "输出要求："
+        "1. 不要输出 markdown 代码块。"
+        "2. 不要输出任何额外解释。"
+        "3. 采用 JSON Lines 输出。"
+        "4. 每行格式固定为："
+        "{\"chapter_title\":\"string\",\"source_excerpt\":\"string\",\"summary\":\"string\"}"
+        "5. 如果没有未命中项，返回空文本。"
+    )
+    user_payload = {
+        "document_title": document_title,
+        "candidate_excerpts": list(candidate_excerpts),
+        "matched_excerpts": list(matched_excerpts),
     }
     return [
         {"role": "system", "content": system_prompt},
@@ -73,6 +113,8 @@ def build_candidate_adjudication_messages(
         "3. 如果两条询价要求本质上是同一件事的重复表达，只保留一条。"
         "4. 如果同一 entry_id 下既出现直接满足又出现存在冲突，则只保留存在冲突结果，不要同时输出两种结论。"
         "5. 对于同一 entry_id，如果多条 source_excerpt 本质上表达的是同一件事，只保留最完整、最有代表性的一条。"
+        "6. source_excerpt 必须直接复用 candidate_excerpts 中的最小可用原文。"
+        "7. 不要改写、扩写或拼接成长句。"
         "关于 difference_summary："
         "1. difference_summary 必须使用简体中文。"
         "2. difference_summary 必须以以下两种前缀之一开头：直接满足：、存在冲突：。"
