@@ -69,10 +69,24 @@ class CompareRow(BaseModel):
     source_excerpt: str
     kb_entry_id: str
     kb_entry_text: str
+    difference_summary_brief: str
     difference_summary: str
     type_code: Literal["P", "A", "B", "C"]
     review_comment: str = ""
     review_status: Literal["已审", "未审"] = "未审"
+
+
+class OtherRequirementRow(BaseModel):
+    row_id: str
+    chapter_title: str
+    source_excerpt: str
+    summary: str
+    source_order: int
+
+
+class CompareAnalysisResult(BaseModel):
+    compare_rows: list[CompareRow] = Field(default_factory=list)
+    other_requirements: list[OtherRequirementRow] = Field(default_factory=list)
 
 
 class DocumentSession(BaseModel):
@@ -80,6 +94,7 @@ class DocumentSession(BaseModel):
     source_file_name: str
     document_text: str = ""
     compare_rows: list[CompareRow] = Field(default_factory=list)
+    other_requirements: list[OtherRequirementRow] = Field(default_factory=list)
     chunks: list[Chunk] = Field(default_factory=list)
     compare_results_by_kb: dict[str, list[ChunkCompareResult]] = Field(default_factory=dict)
     compare_progress_by_kb: dict[str, dict[int, ChunkCompareProgress]] = Field(default_factory=dict)

@@ -47,10 +47,19 @@ export interface CompareRow {
   source_excerpt: string;
   kb_entry_id: string;
   kb_entry_text: string;
+  difference_summary_brief: string;
   difference_summary: string;
   type_code: "P" | "A" | "B" | "C";
   review_comment: string;
   review_status?: ReviewStatus;
+}
+
+export interface OtherRequirementRow {
+  row_id: string;
+  chapter_title: string;
+  source_excerpt: string;
+  summary: string;
+  source_order: number;
 }
 
 export interface KnowledgeBaseFileSummary {

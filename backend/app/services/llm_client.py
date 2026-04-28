@@ -9,8 +9,12 @@ import httpx
 
 from app.services.kb_loader import KnowledgeEntry
 from app.services.prompt_builder import (
+    DOCUMENT_COMPARE_PIPELINE_VERSION,
     build_batch_category_messages,
+    build_candidate_adjudication_messages,
+    build_document_candidate_messages,
     build_document_compare_messages,
+    build_other_requirement_messages,
     build_batch_item_messages,
     build_category_messages,
     build_item_messages,
@@ -19,6 +23,7 @@ from app.services.prompt_builder import (
 MAX_CHAT_RETRIES = 2
 BASE_RETRY_DELAY_SECONDS = 1.0
 FULL_DOCUMENT_MIN_TIMEOUT_SECONDS = 180
+STABLE_TOP_P = 1.0
 
 
 class OpenAICompatibleMatcherLLM:
@@ -184,47 +189,99 @@ class OpenAICompatibleMatcherLLM:
         document_title: str,
         document_text: str,
         entries: list[KnowledgeEntry],
+        candidate_excerpts: list[dict[str, str]] | None = None,
     ) -> list[dict[str, str]]:
         if not self.api_key:
             return []
 
-        messages = build_document_compare_messages(
+        output: list[dict[str, str]] = []
+        async for row in self.stream_compare_document_rows(
             document_title=document_title,
             document_text=document_text,
             entries=entries,
-        )
-        payload = await self._chat_json(messages, timeout_override=max(self.timeout, FULL_DOCUMENT_MIN_TIMEOUT_SECONDS))
-        raw_results = payload.get("results")
-        if not isinstance(raw_results, list):
-            raise ValueError("LLM document compare response must contain a list in 'results'.")
+            candidate_excerpts=candidate_excerpts,
+        ):
+            output.append(row)
+        return output
 
-        allowed_entry_ids = {entry.entry_id for entry in entries}
-        normalized_results: list[dict[str, str]] = []
-        for row in raw_results:
-            if not isinstance(row, dict):
-                continue
+    async def stream_compare_document_rows(
+        self,
+        *,
+        document_title: str,
+        document_text: str,
+        entries: list[KnowledgeEntry],
+        candidate_excerpts: list[dict[str, str]] | None = None,
+    ):
+        if not self.api_key:
+            return
 
-            entry_id = str(row.get("entry_id", "")).strip()
-            chapter_title = str(row.get("chapter_title", "")).strip()
-            source_excerpt = str(row.get("source_excerpt", "")).strip()
-            difference_summary = str(row.get("difference_summary", "")).strip()
-            if (
-                not entry_id
-                or entry_id not in allowed_entry_ids
-                or not source_excerpt
-                or not difference_summary
-            ):
-                continue
-
-            normalized_results.append(
-                {
-                    "entry_id": entry_id,
-                    "chapter_title": chapter_title or "未识别标题",
-                    "source_excerpt": source_excerpt,
-                    "difference_summary": difference_summary,
-                }
+        if candidate_excerpts is None:
+            candidate_excerpts = await self.extract_document_candidates(
+                document_title=document_title,
+                document_text=document_text,
             )
-        return normalized_results
+        if not candidate_excerpts:
+            return
+
+        messages = build_candidate_adjudication_messages(
+            document_title=document_title,
+            candidate_excerpts=candidate_excerpts,
+            entries=entries,
+        )
+        allowed_entry_ids = {entry.entry_id for entry in entries}
+        async for row in self._stream_json_lines(
+            messages=messages,
+            timeout=max(self.timeout, FULL_DOCUMENT_MIN_TIMEOUT_SECONDS),
+            normalizer=lambda line: _normalize_document_compare_row(line, allowed_entry_ids),
+        ):
+            yield row
+
+    async def extract_document_candidates(
+        self,
+        *,
+        document_title: str,
+        document_text: str,
+    ) -> list[dict[str, str]]:
+        if not self.api_key:
+            return []
+
+        messages = build_document_candidate_messages(
+            document_title=document_title,
+            document_text=document_text,
+        )
+        candidates: list[dict[str, str]] = []
+        async for row in self._stream_json_lines(
+            messages=messages,
+            timeout=max(self.timeout, FULL_DOCUMENT_MIN_TIMEOUT_SECONDS),
+            normalizer=_normalize_candidate_excerpt_row,
+        ):
+            candidates.append(row)
+
+        return _dedupe_candidate_excerpts(candidates)
+
+    async def extract_other_requirements(
+        self,
+        *,
+        document_title: str,
+        candidate_excerpts: Sequence[dict[str, object]],
+        matched_excerpts: Sequence[dict[str, object]],
+    ) -> list[dict[str, str]]:
+        if not self.api_key or not candidate_excerpts:
+            return []
+
+        messages = build_other_requirement_messages(
+            document_title=document_title,
+            candidate_excerpts=candidate_excerpts,
+            matched_excerpts=matched_excerpts,
+        )
+        rows: list[dict[str, str]] = []
+        async for row in self._stream_json_lines(
+            messages=messages,
+            timeout=max(self.timeout, FULL_DOCUMENT_MIN_TIMEOUT_SECONDS),
+            normalizer=_normalize_other_requirement_row,
+        ):
+            rows.append(row)
+        return _dedupe_other_requirement_rows(rows)
 
     async def translate_to_chinese(self, *, text: str) -> str:
         if not self.api_key:
@@ -275,6 +332,7 @@ class OpenAICompatibleMatcherLLM:
         body = {
             "model": self.model,
             "temperature": 0,
+            "top_p": STABLE_TOP_P,
             "messages": messages,
             "response_format": {"type": "json_object"},
         }
@@ -308,10 +366,17 @@ class OpenAICompatibleMatcherLLM:
         raise last_error
 
     async def _post_chat_completion_stream(self, messages: list[dict[str, str]], *, timeout: int) -> str:
+        parts: list[str] = []
+        async for content in self._iter_chat_completion_stream_text(messages, timeout=timeout):
+            parts.append(content)
+        return "".join(parts).strip()
+
+    async def _iter_chat_completion_stream_text(self, messages: list[dict[str, str]], *, timeout: int):
         url = f"{self.base_url}/chat/completions"
         body = {
             "model": self.model,
             "temperature": 0,
+            "top_p": STABLE_TOP_P,
             "messages": messages,
             "response_format": {"type": "json_object"},
             "stream": True,
@@ -321,7 +386,9 @@ class OpenAICompatibleMatcherLLM:
             "Content-Type": "application/json",
         }
         last_error: Exception | None = None
+        emitted_any_global = False
         for attempt in range(MAX_CHAT_RETRIES + 1):
+            emitted_any = False
             try:
                 async with httpx.AsyncClient(timeout=timeout) as client:
                     async with client.stream("POST", url, headers=headers, json=body) as response:
@@ -330,28 +397,49 @@ class OpenAICompatibleMatcherLLM:
                             continue
 
                         response.raise_for_status()
-                        chunks: list[str] = []
+                        sse_buffer = ""
                         async for part in response.aiter_text():
                             if part:
-                                chunks.append(part)
-
-                content = _extract_streamed_chat_content("".join(chunks))
-                if not content:
+                                sse_buffer += part
+                                while "\n\n" in sse_buffer:
+                                    block, sse_buffer = sse_buffer.split("\n\n", 1)
+                                    for content_part in _extract_streamed_chat_content_parts(block):
+                                        emitted_any = True
+                                        emitted_any_global = True
+                                        yield content_part
+                if not emitted_any_global:
                     raise ValueError("LLM stream returned no assistant content.")
-                return content
+                return
             except httpx.ReadTimeout as exc:
                 last_error = exc
-                if attempt >= MAX_CHAT_RETRIES:
+                if emitted_any or attempt >= MAX_CHAT_RETRIES:
                     raise
                 await asyncio.sleep(_resolve_backoff_delay_seconds(attempt))
             except httpx.HTTPStatusError as exc:
                 last_error = exc
-                if exc.response.status_code != 429 or attempt >= MAX_CHAT_RETRIES:
+                if emitted_any or exc.response.status_code != 429 or attempt >= MAX_CHAT_RETRIES:
                     raise
                 await asyncio.sleep(_resolve_retry_delay_seconds(exc.response, attempt))
 
-        assert last_error is not None
-        raise last_error
+        if last_error is not None:
+            raise last_error
+        raise ValueError("LLM stream returned no assistant content.")
+
+    async def _stream_json_lines(self, *, messages: list[dict[str, str]], timeout: int, normalizer):
+        buffer = ""
+        async for content_chunk in self._iter_chat_completion_stream_text(messages, timeout=timeout):
+            buffer += content_chunk
+            while "\n" in buffer:
+                line, buffer = buffer.split("\n", 1)
+                normalized = normalizer(line)
+                if normalized is None:
+                    continue
+                yield normalized
+
+        if buffer.strip():
+            normalized = normalizer(buffer)
+            if normalized is not None:
+                yield normalized
 
 
 def _get_chunk_id(chunk: tuple[int, str] | dict[str, object]) -> int:
@@ -433,37 +521,176 @@ def _extract_streamed_chat_content(stream_text: str) -> str:
     for block in stream_text.split("\n\n"):
         if not block.strip():
             continue
-        for line in block.splitlines():
-            if not line.startswith("data: "):
-                continue
-            data = line[len("data: "):].strip()
-            if not data or data == "[DONE]":
-                continue
-            try:
-                payload = json.loads(data)
-            except json.JSONDecodeError:
-                continue
-            choices = payload.get("choices")
-            if not isinstance(choices, list) or not choices:
-                continue
-            first_choice = choices[0]
-            if not isinstance(first_choice, dict):
-                continue
-            delta = first_choice.get("delta")
-            if not isinstance(delta, dict):
-                continue
-            content = delta.get("content")
-            if isinstance(content, str):
-                content_parts.append(content)
-                continue
-            if isinstance(content, list):
-                for item in content:
-                    if not isinstance(item, dict):
-                        continue
-                    text = item.get("text")
-                    if isinstance(text, str):
-                        content_parts.append(text)
+        content_parts.extend(_extract_streamed_chat_content_parts(block))
     return "".join(content_parts).strip()
+
+
+def _extract_streamed_chat_content_parts(block: str) -> list[str]:
+    content_parts: list[str] = []
+    for line in block.splitlines():
+        if not line.startswith("data: "):
+            continue
+        data = line[len("data: "):].strip()
+        if not data or data == "[DONE]":
+            continue
+        try:
+            payload = json.loads(data)
+        except json.JSONDecodeError:
+            continue
+        choices = payload.get("choices")
+        if not isinstance(choices, list) or not choices:
+            continue
+        first_choice = choices[0]
+        if not isinstance(first_choice, dict):
+            continue
+        delta = first_choice.get("delta")
+        if not isinstance(delta, dict):
+            continue
+        content = delta.get("content")
+        if isinstance(content, str):
+            content_parts.append(content)
+            continue
+        if isinstance(content, list):
+            for item in content:
+                if not isinstance(item, dict):
+                    continue
+                text = item.get("text")
+                if isinstance(text, str):
+                    content_parts.append(text)
+    return content_parts
+
+
+def _normalize_document_compare_row(line: str, allowed_entry_ids: set[str]) -> dict[str, str] | None:
+    stripped = line.strip()
+    if not stripped:
+        return None
+    if not stripped.startswith("{"):
+        return None
+    try:
+        row = json.loads(stripped)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(row, dict):
+        return None
+
+    entry_id = str(row.get("entry_id", "")).strip()
+    chapter_title = str(row.get("chapter_title", "")).strip()
+    source_excerpt = str(row.get("source_excerpt", "")).strip()
+    difference_summary = str(row.get("difference_summary", "")).strip()
+    difference_summary_brief = str(row.get("difference_summary_brief", "")).strip()
+    if (
+        not entry_id
+        or entry_id not in allowed_entry_ids
+        or not source_excerpt
+        or not difference_summary
+    ):
+        return None
+
+    return {
+        "entry_id": entry_id,
+        "chapter_title": chapter_title or "未识别标题",
+        "source_excerpt": source_excerpt,
+        "difference_summary_brief": difference_summary_brief or difference_summary,
+        "difference_summary": difference_summary,
+    }
+
+
+def _normalize_candidate_excerpt_row(line: str) -> dict[str, str] | None:
+    stripped = line.strip()
+    if not stripped or not stripped.startswith("{"):
+        return None
+    try:
+        row = json.loads(stripped)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(row, dict):
+        return None
+
+    chapter_title = str(row.get("chapter_title", "")).strip() or "未识别标题"
+    source_excerpt = str(row.get("source_excerpt", "")).strip()
+    if not source_excerpt:
+        return None
+
+    return {
+        "chapter_title": chapter_title,
+        "source_excerpt": source_excerpt,
+    }
+
+
+def _normalize_other_requirement_row(line: str) -> dict[str, str] | None:
+    stripped = line.strip()
+    if not stripped or not stripped.startswith("{"):
+        return None
+    try:
+        row = json.loads(stripped)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(row, dict):
+        return None
+
+    chapter_title = str(row.get("chapter_title", "")).strip() or "未识别标题"
+    source_excerpt = str(row.get("source_excerpt", "")).strip()
+    summary = str(row.get("summary", "")).strip()
+    if not source_excerpt or not summary:
+        return None
+
+    return {
+        "chapter_title": chapter_title,
+        "source_excerpt": source_excerpt,
+        "summary": summary,
+    }
+
+
+def _dedupe_candidate_excerpts(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    unique_rows: list[dict[str, str]] = []
+    for row in rows:
+        normalized_excerpt = _normalize_text_for_candidate_compare(row["source_excerpt"])
+        matched_index = next(
+            (
+                index
+                for index, existing in enumerate(unique_rows)
+                if _candidate_rows_match(normalized_excerpt, _normalize_text_for_candidate_compare(existing["source_excerpt"]))
+            ),
+            None,
+        )
+        if matched_index is None:
+            unique_rows.append(row)
+            continue
+
+        if len(row["source_excerpt"]) > len(unique_rows[matched_index]["source_excerpt"]):
+            unique_rows[matched_index] = row
+    return unique_rows
+
+
+def _dedupe_other_requirement_rows(rows: list[dict[str, str]]) -> list[dict[str, str]]:
+    seen_excerpts: set[str] = set()
+    unique_rows: list[dict[str, str]] = []
+    for row in rows:
+        normalized_excerpt = _normalize_text_for_candidate_compare(row["source_excerpt"])
+        if normalized_excerpt in seen_excerpts:
+            continue
+        seen_excerpts.add(normalized_excerpt)
+        unique_rows.append(row)
+    return unique_rows
+
+
+def _candidate_rows_match(left: str, right: str) -> bool:
+    if left == right:
+        return True
+    if left in right or right in left:
+        return True
+
+    left_tokens = {token for token in left.split(" ") if token}
+    right_tokens = {token for token in right.split(" ") if token}
+    if not left_tokens or not right_tokens:
+        return False
+    overlap = len(left_tokens & right_tokens)
+    smaller = min(len(left_tokens), len(right_tokens))
+    return smaller > 0 and overlap / smaller >= 0.85
+
+
+def _normalize_text_for_candidate_compare(text: str) -> str:
+    return " ".join(text.lower().split())
 
 
 def _dedupe_strings_preserve_order(values: list[str]) -> list[str]:

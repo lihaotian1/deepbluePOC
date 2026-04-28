@@ -1516,6 +1516,7 @@ body {
   width: 100%;
   border-collapse: collapse;
   min-width: 980px;
+  table-layout: fixed;
 }
 
 .results-table th,
@@ -1534,6 +1535,28 @@ body {
   font-size: 13px;
   color: var(--muted);
   z-index: 1;
+}
+
+.results-table th:nth-child(1),
+.results-table td:nth-child(1) {
+  width: 13%;
+}
+
+.results-table th:nth-child(2),
+.results-table td:nth-child(2),
+.results-table th:nth-child(3),
+.results-table td:nth-child(3) {
+  width: 29%;
+}
+
+.results-table th:nth-child(4),
+.results-table td:nth-child(4) {
+  width: 21%;
+}
+
+.results-table th:nth-child(5),
+.results-table td:nth-child(5) {
+  width: 8%;
 }
 
 .results-table tbody tr {
@@ -1686,6 +1709,71 @@ body {
   font-size: 13px;
 }
 
+.other-requirements-modal {
+  width: min(80vw, 1280px);
+  height: 80vh;
+}
+
+.other-requirements-modal__body {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.other-requirements-table-wrap {
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.other-requirements-table {
+  width: 100%;
+  min-width: 960px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.other-requirements-table th,
+.other-requirements-table td {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: top;
+  text-align: left;
+  line-height: 1.6;
+}
+
+.other-requirements-table th {
+  position: sticky;
+  top: 0;
+  background: rgba(248, 250, 253, 0.98);
+  font-size: 13px;
+  color: var(--muted);
+  z-index: 1;
+}
+
+.other-requirements-table th:nth-child(1),
+.other-requirements-table td:nth-child(1) {
+  width: 10%;
+}
+
+.other-requirements-table th:nth-child(2),
+.other-requirements-table td:nth-child(2) {
+  width: 54%;
+}
+
+.other-requirements-table th:nth-child(3),
+.other-requirements-table td:nth-child(3) {
+  width: 36%;
+}
+
+.other-requirements-pagination {
+  margin-bottom: 0;
+}
+
 @media (max-width: 900px) {
   .document-preview__head,
   .results-table-card__head,
@@ -1704,5 +1792,14 @@ body {
   .result-drawer {
     width: 100vw;
     padding-bottom: 80px;
+  }
+
+  .other-requirements-modal {
+    width: 100%;
+    height: min(80vh, 760px);
+  }
+
+  .other-requirements-table {
+    min-width: 720px;
   }
 }

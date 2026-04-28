@@ -65,3 +65,34 @@ test("streamCompare rejects after the retry budget is exhausted", async () => {
 
   assert.deepEqual(seenRetries, ["流式连接中断，正在自动重试(1/1)..."]);
 });
+
+test("streamCompare forwards other requirement events without rewriting the event name", async () => {
+  const seenEvents: Array<{ eventName: string; data: unknown }> = [];
+
+  await streamCompare(
+    "doc-1",
+    (eventName, data) => {
+      seenEvents.push({ eventName, data });
+    },
+    () => undefined,
+    {
+      fetchEventSourceImpl: async (_url, handlers) => {
+        handlers.onmessage?.({
+          event: "other_requirement_row",
+          data: JSON.stringify({ row_id: "other-1", source_excerpt: "Pump flow shall be 120 m3/h." }),
+        });
+      },
+      maxRetries: 0,
+    },
+  );
+
+  assert.deepEqual(seenEvents, [
+    {
+      eventName: "other_requirement_row",
+      data: {
+        row_id: "other-1",
+        source_excerpt: "Pump flow shall be 120 m3/h.",
+      },
+    },
+  ]);
+});

@@ -20,7 +20,11 @@ async def export_excel(
     if session is None:
         raise HTTPException(status_code=404, detail="Document session not found")
 
-    payload = build_export_workbook(rows=session.compare_rows, title="标准化配套结果")
+    payload = build_export_workbook(
+        rows=session.compare_rows,
+        other_requirements=session.other_requirements,
+        title="标准化配套结果",
+    )
     filename = f"{doc_id}_compare.xlsx"
     headers = {"Content-Disposition": f'attachment; filename="{filename}"'}
     return Response(

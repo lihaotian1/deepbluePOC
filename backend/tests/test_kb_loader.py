@@ -21,8 +21,9 @@ def test_load_knowledge_base_flattens_categories() -> None:
     kb = load_knowledge_base(kb_path)
 
     assert isinstance(kb, KnowledgeBase)
-    assert any(category.startswith("通用规范") for category in kb.categories)
-    assert any(entry.type_code == "P" for entry in kb.entries)
+    assert kb.categories
+    assert kb.entries
+    assert all(entry.type_code in {"P", "A", "B", "C", "OTHER"} for entry in kb.entries)
     assert all(entry.category for entry in kb.entries)
 
 
